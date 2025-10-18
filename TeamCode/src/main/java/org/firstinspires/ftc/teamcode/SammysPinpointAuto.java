@@ -16,6 +16,14 @@ public class SammysPinpointAuto extends LinearOpMode {
     double displacement;
     double angle;
     double angleAdd;
+    enum partsOfAuto{
+        move0,
+        intake0,
+        move1
+    }
+    boolean intakeing = false;
+    double waitForIntake;
+    partsOfAuto PartsOfAuto = partsOfAuto.move0;
     //define gamepad1
     public Gamepad gamepad1;
 
@@ -40,7 +48,26 @@ public class SammysPinpointAuto extends LinearOpMode {
       return angleAdd * 180/Math.PI;
     }
     public void runOpMode() {
-        movementMath();
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"pinpoint");
+        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
+        pinpoint.resetPosAndIMU();
+        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
+        waitForStart();
+        while (opModeIsActive()) {
+            if (pinpoint.getPosX(DistanceUnit.INCH) == targetX && pinpoint.getPosY(DistanceUnit.INCH) == targetY && PartsOfAuto == partsOfAuto.move0) {
+            PartsOfAuto = partsOfAuto.intake0;
+            intakeing = true;
+            waitForIntake = System.currentTimeMillis();
+            } else if (PartsOfAuto == partsOfAuto.intake0 && System.currentTimeMillis() > waitForIntake + 300) {
+                intakeing = false;
+                PartsOfAuto = partsOfAuto.move1;
+            }
+            if (intakeing) {
+                intake();
+            }
+            pinpoint.update();
+            movementMath();
+        }
     }
     public void movementMath() {
         double leftFront = drive() + turn() + strafe();
