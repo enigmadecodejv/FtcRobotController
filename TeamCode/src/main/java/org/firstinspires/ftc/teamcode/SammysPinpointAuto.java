@@ -17,52 +17,93 @@ public class SammysPinpointAuto extends LinearOpMode {
     double angle;
     double angleAdd;
     enum partsOfAuto{
-        move0,
-        intake0,
-        move1
+        move,
+        intake,
+        rotate,
+        outtake
     }
-    boolean intakeing = false;
+    enum motif{
+        ppg,
+        pgp,
+        gpp
+    }
+    boolean intaking = false;
     double waitForIntake;
-    partsOfAuto PartsOfAuto = partsOfAuto.move0;
+    partsOfAuto PartsOfAuto = partsOfAuto.move;
     //define gamepad1
     public Gamepad gamepad1;
-
+    motif Motif;
     // declare wheels
     public DcMotor leftFrontDrive;
     public DcMotor leftBackDrive;
     public DcMotor rightFrontDrive;
     public DcMotor rightBackDrive;
+    public DcMotor intake;
     public double speed = 0.75;
+    public int quadrant;
+    artifactsPos[] artifactArray = {new artifactsPos(12,6, "green"), new artifactsPos(12,6, "blue")};
+    public double hi = artifactArray[1].x;
     public double drive() {
         displacementX = targetX - pinpoint.getPosX(DistanceUnit.INCH);
         displacementY = targetY - pinpoint.getPosY(DistanceUnit.INCH);
         displacement = Math.pow(Math.pow(displacementX, 2) + Math.pow(displacementY, 2), 0.5);
         angle = Math.atan(displacementY / displacementX);
-        angleAdd = Math.abs(angle) + Math.abs(pinpoint.getHeading(AngleUnit.RADIANS));
-        return Math.cos(angleAdd) * displacement;
+        angleAdd = angle - pinpoint.getHeading(AngleUnit.RADIANS);
+        double drive;
+        if (displacementX > 0 && displacementY > 0){
+            quadrant = 1;
+        }else if (displacementX < 0 && displacementY > 0){
+            quadrant = 2;
+        }else if (displacementX < 0 && displacementY < 0){
+            quadrant = 3;
+        }else if (displacementX > 0 && displacementY < 0){
+            quadrant = 4;
+        }
+        if (quadrant%2 == 0){
+            drive = Math.sin(angleAdd) * displacement;
+        }else {
+            drive = Math.cos(angleAdd) * displacement;
+        }
+            return drive;
     }
     public double strafe() {
-        return Math.sin(angleAdd) * displacement;
+        double strafe;
+        if (quadrant%2 == 0){
+            strafe = Math.cos(angleAdd) * displacement;
+        }else {
+            strafe = Math.sin(angleAdd) * displacement;
+        }
+        return strafe;
     }
     public double turn() {
       return angleAdd * 180/Math.PI;
     }
     public void runOpMode() {
+        intake = hardwareMap.get(DcMotor.class,"intake");
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"pinpoint");
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
         pinpoint.resetPosAndIMU();
         pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
+        while (!opModeIsActive()) {
+            if (gamepad1.a){
+                Motif = motif.gpp;
+            }else if (gamepad1.b){
+                Motif = motif.pgp;
+            }else if (gamepad1.x){
+                Motif = motif.ppg;
+            }
+        }
         waitForStart();
         while (opModeIsActive()) {
-            if (pinpoint.getPosX(DistanceUnit.INCH) == targetX && pinpoint.getPosY(DistanceUnit.INCH) == targetY && PartsOfAuto == partsOfAuto.move0) {
-            PartsOfAuto = partsOfAuto.intake0;
-            intakeing = true;
+            if (pinpoint.getPosX(DistanceUnit.INCH) == targetX && pinpoint.getPosY(DistanceUnit.INCH) == targetY && PartsOfAuto == partsOfAuto.move) {
+            PartsOfAuto = partsOfAuto.intake;
+            intaking = true;
             waitForIntake = System.currentTimeMillis();
-            } else if (PartsOfAuto == partsOfAuto.intake0 && System.currentTimeMillis() > waitForIntake + 300) {
-                intakeing = false;
-                PartsOfAuto = partsOfAuto.move1;
+            } else if (PartsOfAuto == partsOfAuto.intake && System.currentTimeMillis() > waitForIntake + 300) {
+                intaking = false;
+                PartsOfAuto = partsOfAuto.move;
             }
-            if (intakeing) {
+            if (intaking) {
                 intake();
             }
             pinpoint.update();
@@ -70,10 +111,10 @@ public class SammysPinpointAuto extends LinearOpMode {
         }
     }
     public void movementMath() {
-        double leftFront = drive() + turn() + strafe();
-        double leftBack = drive() + turn() - strafe();
-        double rightFront = drive() - turn() - strafe();
-        double rightBack = drive() - turn() + strafe();
+        double leftFront = drive() + turn()/180 + strafe();
+        double leftBack = drive() + turn()/180 - strafe();
+        double rightFront = drive() - turn()/180 - strafe();
+        double rightBack = drive() - turn()/180 + strafe();
 
         // Normalize the values so neither exceed +/- 1.0
 
@@ -93,5 +134,8 @@ public class SammysPinpointAuto extends LinearOpMode {
         leftBackDrive.setPower(leftBack * speed);
         rightFrontDrive.setPower(rightFront * speed);
         rightBackDrive.setPower(rightBack * speed);
+    }
+    public  void intake () {
+        intake.setPower(1);
     }
 }
