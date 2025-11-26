@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
@@ -15,10 +16,10 @@ import org.firstinspires.ftc.teamcode.intake.decodeIntake;
 
 @TeleOp(name="DecodeTeleop", group="Enigma")
 public class DecodeTeleop extends LinearOpMode {
-    decodeDriveCode driveCode = new decodeDriveCode(gamepad1);
-    decodeIntake intakeCode = new decodeIntake();
-    decodeOuttake outtakeCode = new decodeOuttake();
     GoBildaPinpointDriver pinpoint;
+    decodeDriveCode driveCode;
+    decodeIntake intakeCode;
+    decodeOuttake outtakeCode;
 
     double redGoalX = 0, redGoalY = 0;
     double blueGoalX = 0, blueGoalY = 0;
@@ -77,6 +78,11 @@ public class DecodeTeleop extends LinearOpMode {
         }else if (velocityXY > 0 && velocityZ < 0){
             quadrant = 4;
         }
+        if (angleRad < 0){
+            angleRad += 2*Math.PI;
+        }else if (angleRad > 2*Math.PI){
+            angleRad -= 2*Math.PI;
+        }
         if (angleRad > Math.PI*quadrant/2 || angleRad < Math.PI*(quadrant-1)/2){
             angleRad += Math.PI;
         }
@@ -96,6 +102,7 @@ public class DecodeTeleop extends LinearOpMode {
         Experiment to find the multiplier of total velocity to get backspin
         */
         turret.setPosition(angle/(2*Math.PI));//Angle the turret servo properly
+
     }
 
     //For a given angle, x, and y distance, find start velocity
@@ -221,21 +228,20 @@ public class DecodeTeleop extends LinearOpMode {
     private void mainLoop() {
         //run functions
         driveCode.runWheels();
-        intakeCode.intake(hardwareMap);
+        intakeCode.intake();
         outtakeCode.outtake();
-        if (variableAngle) {
-            variableOuttake(getShootVelocity(), getShootAngle());
-        }else if (!variableAngle){
-            autoOuttake(getVelocityShot());
-        }
+        //if (variableAngle) {
+            //variableOuttake(getShootVelocity(), getShootAngle());
+        //}else if (!variableAngle){
+            //autoOuttake(getVelocityShot());
+        //}
     }
     void initialize() {
         //hardware
-        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"pinpoint");
-        turret = hardwareMap.get(Servo.class,"turret");
-        shooter = hardwareMap.get(DcMotorEx.class, "shooter");
-
-        shooter.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        //pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");\
+        driveCode = new decodeDriveCode(gamepad1, hardwareMap);
+        intakeCode = new decodeIntake(hardwareMap, gamepad2);
+        outtakeCode = new decodeOuttake(hardwareMap, gamepad2);
     }
 
     @Override
