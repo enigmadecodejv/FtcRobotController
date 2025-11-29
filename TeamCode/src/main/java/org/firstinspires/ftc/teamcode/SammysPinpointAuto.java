@@ -14,7 +14,9 @@ import org.firstinspires.ftc.teamcode.vision.aprilTagProcessor;
 @Autonomous(name = "PinpointAuto", group = "enigma")
 public class SammysPinpointAuto extends LinearOpMode {
     aprilTagProcessor aprilTagProcessor = new aprilTagProcessor(hardwareMap);
-    GoBildaPinpointDriver pinpoint;
+    public GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");
+    public double RCCX = 0.42;//robot center correction X
+    public double RCCY = -4.375;//robot center correction Y
     double [] targetsXY;
     double targetX;
     double targetY;
@@ -109,8 +111,8 @@ public class SammysPinpointAuto extends LinearOpMode {
     };
     public double drive() {
         //find x and y position compared to robot (x - xnot)
-        displacementX = targetX - pinpoint.getPosX(DistanceUnit.INCH);
-        displacementY = targetY - pinpoint.getPosY(DistanceUnit.INCH);
+        displacementX = targetX - pinpoint.getPosX(DistanceUnit.INCH) + RCCX;
+        displacementY = targetY - pinpoint.getPosY(DistanceUnit.INCH) + RCCY;
         //find x and y positon in polar coordinates (r@theta)
         displacement = Math.pow(Math.pow(displacementX, 2) + Math.pow(displacementY, 2), 0.5);
         angle = Math.atan(displacementY / displacementX);
@@ -174,8 +176,7 @@ public class SammysPinpointAuto extends LinearOpMode {
 
     }
     public void runOpMode() {
-        intake = hardwareMap.get(DcMotor.class,"intake");
-        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"pinpoint");
+        pinpoint.setOffsets(2, 2.5, DistanceUnit.INCH);
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
         pinpoint.resetPosAndIMU();
         pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
@@ -184,7 +185,7 @@ public class SammysPinpointAuto extends LinearOpMode {
         }
         waitForStart();
         while (opModeIsActive()) {
-            if (pinpoint.getPosX(DistanceUnit.INCH) == targetX && pinpoint.getPosY(DistanceUnit.INCH) == targetY && PartsOfAuto == partsOfAuto.move) {
+            if (pinpoint.getPosX(DistanceUnit.INCH) + RCCX == targetX && pinpoint.getPosY(DistanceUnit.INCH) + RCCY == targetY && PartsOfAuto == partsOfAuto.move) {
             PartsOfAuto = partsOfAuto.intake;
             intaking = true;
             waitForIntake = System.currentTimeMillis();
@@ -263,8 +264,8 @@ public class SammysPinpointAuto extends LinearOpMode {
     public void setArtifactTargets(PurpleOrGreen color){
         for (int i = 0; i < artifactArray.length - 1; i++){
             if (artifactArray[i].purpleOrGreen == color){
-                artifactDisplacementX = artifactArray[i].x - pinpoint.getPosX(DistanceUnit.INCH);
-                artifactDisplacementY = artifactArray[i].y - pinpoint.getPosY(DistanceUnit.INCH);
+                artifactDisplacementX = artifactArray[i].x - pinpoint.getPosX(DistanceUnit.INCH) - RCCX;
+                artifactDisplacementY = artifactArray[i].y - pinpoint.getPosY(DistanceUnit.INCH) - RCCY;
                 artifactDisplacementXY = Math.sqrt(Math.pow(artifactDisplacementX,2) + Math.pow(artifactDisplacementY,2));
                 if (artifactDisplacementXY < artifactMinDisplacement) {
                     artifactMinDisplacement = artifactDisplacementXY;
@@ -278,8 +279,8 @@ public class SammysPinpointAuto extends LinearOpMode {
     }
     public int checkIntersection(double targetX, double targetY){
         //returns the position in artifactArray of the first artifact (in artifactArray) the line segment from robot to target intersects with
-        double slope = (targetX - pinpoint.getPosX(DistanceUnit.INCH))/(targetY - pinpoint.getPosY(DistanceUnit.INCH));
-        double linePosY = (pinpoint.getPosY(DistanceUnit.INCH) - (slope * pinpoint.getPosX(DistanceUnit.INCH)));
+        double slope = (targetX - pinpoint.getPosX(DistanceUnit.INCH) + RCCX)/(targetY - pinpoint.getPosY(DistanceUnit.INCH) + RCCY);
+        double linePosY = pinpoint.getPosY(DistanceUnit.INCH) + RCCY - (slope * (pinpoint.getPosX(DistanceUnit.INCH) + RCCX));
         double[] intersectionX;
         double coeffXpwr2;
         double coeffXpwr1;
@@ -291,10 +292,10 @@ public class SammysPinpointAuto extends LinearOpMode {
             coeffXpwr1 = 2*((slope*(linePosY - artifactArray[j].y)) - artifactArray[j].x);
             coeffXpwr0 = Math.pow(linePosY - artifactArray[j].y,2) - Math.pow(artifactArray[j].radius,2);
             intersectionX = new double[]{(-coeffXpwr1 + Math.sqrt(Math.pow(coeffXpwr1, 2) - 4 * coeffXpwr2 * coeffXpwr0)) / (2 * coeffXpwr2), (-coeffXpwr1 - Math.sqrt(Math.pow(coeffXpwr1, 2) - 4 * coeffXpwr2 * coeffXpwr0)) / (2 * coeffXpwr2)};
-            if (targetX > pinpoint.getPosX(DistanceUnit.INCH)){
-                interval = new double[] {pinpoint.getPosX(DistanceUnit.INCH), targetX};
-            }else if (artifactArray[j].x < pinpoint.getPosX(DistanceUnit.INCH)){
-                interval = new double[] {targetX, pinpoint.getPosX(DistanceUnit.INCH)};
+            if (targetX > pinpoint.getPosX(DistanceUnit.INCH) + RCCX){
+                interval = new double[] {pinpoint.getPosX(DistanceUnit.INCH) + RCCX, targetX};
+            }else if (artifactArray[j].x < pinpoint.getPosX(DistanceUnit.INCH) + RCCX){
+                interval = new double[] {targetX, pinpoint.getPosX(DistanceUnit.INCH) + RCCX};
             }else{
                 interval = new double[]{0,0};
             }
@@ -310,13 +311,13 @@ public class SammysPinpointAuto extends LinearOpMode {
         int intersect = checkIntersection(targetX,targetY);
         if (intersect != 16265){
             if (timesAttempted%2 != 0){
-                if (targetX - pinpoint.getPosX(DistanceUnit.INCH) > targetY - pinpoint.getPosY(DistanceUnit.INCH)){
+                if (targetX - pinpoint.getPosX(DistanceUnit.INCH) - RCCX > targetY - pinpoint.getPosY(DistanceUnit.INCH) - RCCY){
                     newTarget = new double [] {artifactArray[intersect].x,artifactArray[intersect].y + (artifactArray[intersect].radius + robotSize)*(Math.floor(timesAttempted/2)+1)};
                 }else{
                     newTarget = new double [] {artifactArray[intersect].x + (artifactArray[intersect].radius + robotSize)*(Math.floor(timesAttempted/2)+1), artifactArray[intersect].y};
                 }
             }else{
-                if (targetX - pinpoint.getPosX(DistanceUnit.INCH) > targetY - pinpoint.getPosY(DistanceUnit.INCH)){
+                if (targetX - pinpoint.getPosX(DistanceUnit.INCH) - RCCX > targetY - pinpoint.getPosY(DistanceUnit.INCH) - RCCY){
                     newTarget = new double [] {artifactArray[intersect].x,artifactArray[intersect].y - (artifactArray[intersect].radius + robotSize)*(Math.floor(timesAttempted/2)+1)};
                 }else{
                     newTarget = new double [] {artifactArray[intersect].x - (artifactArray[intersect].radius + robotSize)*(Math.floor(timesAttempted/2)+1), artifactArray[intersect].y};

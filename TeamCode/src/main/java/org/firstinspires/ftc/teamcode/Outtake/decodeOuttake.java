@@ -24,14 +24,19 @@ public class decodeOuttake {
         currentGamepad2 = gamepad2;
     }
     public void outtake (){
+        if (null == null) {
+
+        }
         pastGamepad2 = currentGamepad2;
         currentGamepad2 = gamepad2;
         if (currentGamepad2.left_trigger > 0.25) {
-            outtakeServo.setPosition(0.8);
+            outtakeServo.setPosition(0.91);
+            //outtakeMotor.setPower(0.8);
+            //outtakeMotor2.setPower(0.8);
         }else {
-            outtakeServo.setPosition(1);
+            outtakeServo.setPosition(0.96);
+            outtakeMotor.setPower(0);
+            outtakeMotor2.setPower(0);
         }
-        //outtakeMotor.setPower(0.8);
-        //outtakeMotor2.setPower(0.8);
     }
 }

@@ -12,21 +12,24 @@ public class targetMoveTest extends LinearOpMode {
     public double displacementX;
     public double displacementY;
     public double displacement;
-    public double targetX;
-    public double targetY;
+    public double targetX = 150;
+    public double targetY = 150;
     public double angle;
     public double angleAdd;
     public int quadrant;
     public double speed = 0.75;
-    public DcMotor leftFrontDrive = hardwareMap.get(DcMotor .class, "FrontLeft");
-    public DcMotor leftBackDrive = hardwareMap.get(DcMotor.class, "RearLeft");
-    public DcMotor rightFrontDrive = hardwareMap.get(DcMotor.class, "FrontRight");
-    public DcMotor rightBackDrive = hardwareMap.get(DcMotor.class, "RearRight");
+    public double RCCY = -4.375;//robot center correction Y
+    public double RCCX = 0.42;//robot center correction X
+    public DcMotor leftFrontDrive;
+    public DcMotor leftBackDrive;
+    public DcMotor rightFrontDrive;
+    public DcMotor rightBackDrive;
     public GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");
+
     public double drive() {
         //find x and y position compared to robot (x - xnot)
-        displacementX = targetX - pinpoint.getPosX(DistanceUnit.INCH);
-        displacementY = targetY - pinpoint.getPosY(DistanceUnit.INCH);
+        displacementX = targetX - pinpoint.getPosX(DistanceUnit.INCH) + RCCX;
+        displacementY = targetY - pinpoint.getPosY(DistanceUnit.INCH) + RCCY;
         //find x and y positon in polar coordinates (r@theta)
         displacement = Math.pow(Math.pow(displacementX, 2) + Math.pow(displacementY, 2), 0.5);
         angle = Math.atan(displacementY / displacementX);
@@ -54,6 +57,11 @@ public class targetMoveTest extends LinearOpMode {
         }
         //find a theta based on the robot's rotation and angle
         angleAdd = angle - pinpoint.getHeading(AngleUnit.RADIANS);
+        if (angleAdd >= 2*Math.PI){
+            angleAdd = angleAdd - 2 * Math.PI;
+        }else if (angleAdd < 0){
+            angleAdd = angleAdd + 2 * Math.PI;
+        }
         //use that theta to find polar coordinates
         double drive;
         //find quadrant
@@ -120,7 +128,18 @@ public class targetMoveTest extends LinearOpMode {
         rightFrontDrive.setPower(rightFront * speed);
         rightBackDrive.setPower(rightBack * speed);
     }
-    public void runOpMode (){
+    public void runOpMode () {
+        leftFrontDrive = hardwareMap.get(DcMotor .class, "FrontLeft");
+        leftBackDrive = hardwareMap.get(DcMotor.class, "RearLeft");
+        rightFrontDrive = hardwareMap.get(DcMotor.class, "FrontRight");
+        rightBackDrive = hardwareMap.get(DcMotor.class, "RearRight");
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");
+        waitForStart();
+        pinpoint.resetPosAndIMU();
+        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
+        pinpoint.setOffsets(2, 2.5, DistanceUnit.INCH);
+        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
+        while (opModeIsActive()) {
         movementMath();
         if (gamepad1.a){
             targetX += 1;
@@ -131,8 +150,9 @@ public class targetMoveTest extends LinearOpMode {
         if (gamepad1.x){
             targetX -= 1;
         }
-        if (gamepad1.y){
+        if (gamepad1.y) {
             targetY -= 1;
+        }
         }
     }
 }

@@ -16,7 +16,7 @@ import org.firstinspires.ftc.teamcode.intake.decodeIntake;
 
 @TeleOp(name="DecodeTeleop", group="Enigma")
 public class DecodeTeleop extends LinearOpMode {
-    GoBildaPinpointDriver pinpoint;
+    public GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");
     decodeDriveCode driveCode;
     decodeIntake intakeCode;
     decodeOuttake outtakeCode;
@@ -252,12 +252,15 @@ public class DecodeTeleop extends LinearOpMode {
     private void mainLoop() {
         //run functions
         if (gamepad2.left_trigger > 0.25 && powerGood == PowerGood.yes){
-            outtakeServo.setPosition(0);
+            outtakeServo.setPosition(0.91);
             telemetry.addLine("Shooting");
         }else if (powerGood == PowerGood.tooFar){
             telemetry.addLine("Get closer to the goal.");
         }else if (powerGood == PowerGood.tooClose){
             telemetry.addLine("Get farther from the goal");
+        }
+        if (gamepad2.left_trigger <= 0.25) {
+            outtakeServo.setPosition(0.96);
         }
         autoOuttake(getVelocityShot());
         driveCode.runWheels();
@@ -283,7 +286,10 @@ public class DecodeTeleop extends LinearOpMode {
         outtakeMotor2 = hardwareMap.get(DcMotor.class, "ShooterLeft");
         outtakeMotor2.setDirection(DcMotor.Direction.REVERSE);
         outtakeServo = hardwareMap.get(Servo.class, "Feeder");
-
+        pinpoint.setOffsets(2, 2.5, DistanceUnit.INCH);
+        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
+        pinpoint.resetPosAndIMU();
+        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
         waitForStart();
 
         while (opModeIsActive()) {
