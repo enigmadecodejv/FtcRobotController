@@ -20,6 +20,9 @@ public class DecodeTeleop extends LinearOpMode {
     decodeDriveCode driveCode;
     decodeIntake intakeCode;
     decodeOuttake outtakeCode;
+    DcMotor outtakeMotor;
+    DcMotor outtakeMotor2;
+    Servo outtakeServo;
 
     double redGoalX = 0, redGoalY = 0;
     double blueGoalX = 0, blueGoalY = 0;
@@ -36,7 +39,16 @@ public class DecodeTeleop extends LinearOpMode {
     public double goalDistanceZ = goalZ - shootZ;
     public double goalDistanceXY;
     double quadrant;
+    double motorRotSpeed = 6000 * 2 * Math.PI/60;
+    double motorRadius = 4.25/2.54;
     boolean variableAngle = false;
+    enum PowerGood{
+        yes,
+        tooClose,
+        tooFar
+    }
+    public PowerGood powerGood;
+    public double power;
 
     Pose2D blueGoalPos = new Pose2D(DistanceUnit.INCH, 1.0 ,1.0,AngleUnit.DEGREES,0);
     Pose2D redGoalPos = new Pose2D(DistanceUnit.INCH, 1.0 ,1.0,AngleUnit.DEGREES,0);
@@ -115,19 +127,31 @@ public class DecodeTeleop extends LinearOpMode {
             goalDistanceX = blueGoalX - pinpoint.getPosX(DistanceUnit.INCH);
             goalDistanceY = blueGoalY - pinpoint.getPosY(DistanceUnit.INCH);
         }
+        if (goalDistanceZ - goalDistanceXY * Math.tan(angle * Math.PI / 180) == 0){
+            return Math.pow(-1,0.5);
+        }
         goalDistanceXY = Math.pow(Math.pow(goalDistanceX,2) + Math.pow(goalDistanceY,2),0.5);
         double velocityXY = goalDistanceXY * Math.pow(gravity,0.5)/Math.pow(2 * (goalDistanceZ - goalDistanceXY * Math.tan(angle * Math.PI / 180)),0.5);
         double velocityZ = velocityXY * Math.tan(angle*Math.PI/180);
         return Math.pow(Math.pow(velocityXY,2)+Math.pow(velocityZ,2),0.5);
     }
     public void autoOuttake(double speed){
-        /*
-         I don't know how to make the motor release the balls at a certain speed, so will need to figure that out
-         Pretty sure how that works is that launch velocity = total velocity - backspin and backspin is proportional to total velocity
-        I think total velocity = rpm(motor) * circumference of motor or thing the motor is attached to
-        Use speed for what the launch velocity should be
-        Experiment to find the multiplier of total velocity to get backspin
-        */
+        powerGood = PowerGood.yes;
+        if (speed != speed){
+            powerGood = PowerGood.tooClose;
+            power = 0;
+        }else {
+            power = speed / (motorRotSpeed * motorRadius);
+            if (power > 0.8) {
+                power = 0.8;
+                powerGood = PowerGood.tooFar;
+            } else if (power < -0.8) {
+                power = -0.8;
+                powerGood = PowerGood.tooFar;
+            }
+            outtakeMotor.setPower(power);
+            outtakeMotor2.setPower(power);
+        }
     }
     /*public double getDistanceToGoal() {
         double robotPosX, robotPosY;
@@ -227,9 +251,17 @@ public class DecodeTeleop extends LinearOpMode {
 */
     private void mainLoop() {
         //run functions
+        if (gamepad2.left_trigger > 0.25 && powerGood == PowerGood.yes){
+            outtakeServo.setPosition(0);
+            telemetry.addLine("Shooting");
+        }else if (powerGood == PowerGood.tooFar){
+            telemetry.addLine("Get closer to the goal.");
+        }else if (powerGood == PowerGood.tooClose){
+            telemetry.addLine("Get farther from the goal");
+        }
+        autoOuttake(getVelocityShot());
         driveCode.runWheels();
         intakeCode.intake();
-        outtakeCode.outtake();
         //if (variableAngle) {
             //variableOuttake(getShootVelocity(), getShootAngle());
         //}else if (!variableAngle){
@@ -247,6 +279,10 @@ public class DecodeTeleop extends LinearOpMode {
     @Override
     public void runOpMode() {
         initialize();
+        outtakeMotor = hardwareMap.get(DcMotor.class, "ShooterRight");
+        outtakeMotor2 = hardwareMap.get(DcMotor.class, "ShooterLeft");
+        outtakeMotor2.setDirection(DcMotor.Direction.REVERSE);
+        outtakeServo = hardwareMap.get(Servo.class, "Feeder");
 
         waitForStart();
 
