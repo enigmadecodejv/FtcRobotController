@@ -25,11 +25,24 @@ public class targetMoveTest extends LinearOpMode {
     public DcMotor rightFrontDrive;
     public DcMotor rightBackDrive;
     public GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");
-
+    public double headingChangeRCCX;
+    public double headingChangeRCCY;
+    public double heading;
     public double drive() {
+        heading = pinpoint.getHeading(AngleUnit.RADIANS);
+        if (heading < 0){
+            heading += Math.PI;
+        }
+        if (heading < Math.PI/2 || (heading < 3*Math.PI/2 && heading >= Math.PI)){
+            headingChangeRCCX = RCCX * Math.cos(heading) + RCCY * Math.cos(heading);
+            headingChangeRCCY = RCCX * Math.sin(heading) + RCCY * Math.sin(heading);
+        }else {
+            headingChangeRCCX = RCCX * Math.sin(heading) + RCCY * Math.sin(heading);
+            headingChangeRCCY = RCCX * Math.cos(heading) + RCCY * Math.cos(heading);
+        }
         //find x and y position compared to robot (x - xnot)
-        displacementX = targetX - pinpoint.getPosX(DistanceUnit.INCH) + RCCX;
-        displacementY = targetY - pinpoint.getPosY(DistanceUnit.INCH) + RCCY;
+        displacementX = targetX - pinpoint.getPosX(DistanceUnit.INCH) + headingChangeRCCX;
+        displacementY = targetY - pinpoint.getPosY(DistanceUnit.INCH) + headingChangeRCCY;
         //find x and y positon in polar coordinates (r@theta)
         displacement = Math.pow(Math.pow(displacementX, 2) + Math.pow(displacementY, 2), 0.5);
         angle = Math.atan(displacementY / displacementX);
@@ -65,13 +78,13 @@ public class targetMoveTest extends LinearOpMode {
         //use that theta to find polar coordinates
         double drive;
         //find quadrant
-        if (displacementX > 0 && displacementY > 0){
+        if (angleAdd < Math.PI/2){
             quadrant = 1;
-        }else if (displacementX < 0 && displacementY > 0){
+        }else if (angleAdd >= Math.PI/2 && angleAdd < Math.PI){
             quadrant = 2;
-        }else if (displacementX < 0 && displacementY < 0){
+        }else if (angleAdd >= Math.PI && angleAdd < 3*Math.PI/2){
             quadrant = 3;
-        }else if (displacementX > 0 && displacementY < 0){
+        }else if (angleAdd >= 3*Math.PI/2){
             quadrant = 4;
         }
         //use that quadrant to find the x coordinate based on sin and cos
@@ -92,15 +105,15 @@ public class targetMoveTest extends LinearOpMode {
         }
         return strafe;
     }
-    public double turn() {
+    /*public double turn() {
         //find how much the robot needs to turn
         return angleAdd * 180/Math.PI;
 
-    }
+    }*/
     public void movementMath() {
         double drive = drive();
         double strafe = strafe();
-        double turn = turn();
+        double turn = 0;
         //I HAVE DONE THEFT!
         double leftFront = drive + turn/180 + strafe;
         double leftBack = drive + turn/180 - strafe;
