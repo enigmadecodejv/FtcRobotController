@@ -118,7 +118,7 @@ public class DecodeTeleop extends LinearOpMode {
     }
 
     //For a given angle, x, and y distance, find start velocity
-    double angle = 0;
+    double angle = Math.PI/2;
     public double getVelocityShot(){
         if (isRed){
             goalDistanceX = redGoalX - pinpoint.getPosX(DistanceUnit.INCH);
