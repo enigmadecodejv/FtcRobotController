@@ -27,7 +27,7 @@ public class DecodeTeleop extends LinearOpMode {
     double redGoalX = 130, redGoalY = 138.25;
     double blueGoalX = 11, blueGoalY = 138.25;
     double goalZ = 46.25;
-    double shootZ = 0;
+    double shootZ = 10.5;
     double targetVelocity;
     boolean isRed = true;
     boolean shooting;
@@ -128,10 +128,10 @@ public class DecodeTeleop extends LinearOpMode {
             goalDistanceY = blueGoalY - pinpoint.getPosY(DistanceUnit.INCH);
         }
         goalDistanceXY = Math.pow(Math.pow(goalDistanceX,2) + Math.pow(goalDistanceY,2),0.5);
-        if (goalDistanceZ - goalDistanceXY * Math.tan(angle * Math.PI / 180) == 0){
+        if (goalDistanceZ - Math.tan(angle*Math.PI/180) * goalDistanceXY == 0){
             return Math.pow(-1,0.5);
         }
-        double velocityXY = goalDistanceXY * Math.pow(gravity,0.5)/Math.pow(2 * (goalDistanceZ - goalDistanceXY * Math.tan(angle * Math.PI / 180)),0.5);
+        double velocityXY = Math.pow(gravity*goalDistanceXY/(2*(goalDistanceZ - Math.tan(angle*Math.PI/180) * goalDistanceXY)),0.5);
         double velocityZ = velocityXY * Math.tan(angle*Math.PI/180);
         return Math.pow(Math.pow(velocityXY,2)+Math.pow(velocityZ,2),0.5);
     }
