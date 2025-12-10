@@ -250,13 +250,21 @@ public class SammysPinpointAuto extends LinearOpMode {
         rightBackDrive.setPower(rightBack * speed);
     }
     public double movementProportions(double displacement, double angleAdd){
-        double moveTime = ((displacement - 1)/roboLocity) + (Math.log(0.01)/Math.log(1-roboLocity));
-        double turnTime = (((angleAdd/Math.PI) - 1)/roboLangle) + (Math.log(0.01)/Math.log(1-roboLangle));
-        if (angleAdd == 0){
-            turnTime = 0;
+        double moveTime = Math.pow(-1,0.5);
+        double turnTime = Math.pow(-1,0.5);
+        if ((-displacement + Math.pow(Math.pow(displacement,2)-4*roboLocity*displacement,0.5))/2 > 0){
+            moveTime = (-displacement + Math.pow(Math.pow(displacement,2)-4*roboLocity*displacement,0.5))/2;
+        }else if ((-displacement - Math.pow(Math.pow(displacement,2)-4*roboLocity*displacement,0.5))/2 > 0){
+            moveTime = (-displacement - Math.pow(Math.pow(displacement,2)-4*roboLocity*displacement,0.5))/2;
+        }else{
+            telemetry.addData("NOOOOO!", "Help please!");
         }
-        if (displacement == 0){
-            moveTime = 0;
+        if ((-displacement + Math.pow(Math.pow(displacement,2)-4*roboLangle*displacement,0.5))/2 > 0){
+            turnTime = (-displacement + Math.pow(Math.pow(displacement,2)-4*roboLangle*displacement,0.5))/2;
+        }else if ((-displacement - Math.pow(Math.pow(displacement,2)-4*roboLangle*displacement,0.5))/2 > 0){
+            turnTime = (-displacement - Math.pow(Math.pow(displacement,2)-4*roboLangle*displacement,0.5))/2;
+        }else{
+            telemetry.addData("NOOOOO!", "Help please!");
         }
         //Returns what drive and strafe should add up to
         return moveTime/(moveTime+turnTime);

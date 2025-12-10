@@ -31,7 +31,7 @@ public class targetMoveTest extends LinearOpMode {
     public double drive() {
         heading = pinpoint.getHeading(AngleUnit.RADIANS);
         if (heading < 0){
-            heading += Math.PI;
+            heading += 2*Math.PI;
         }
         if (heading < Math.PI/2 || (heading < 3*Math.PI/2 && heading >= Math.PI)){
             headingChangeRCCX = RCCX * Math.cos(heading) + RCCY * Math.cos(heading);
