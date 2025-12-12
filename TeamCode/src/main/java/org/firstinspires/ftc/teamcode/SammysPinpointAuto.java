@@ -5,15 +5,16 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
-import org.firstinspires.ftc.robotcontroller.external.samples.RobotAutoDriveToAprilTagOmni;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.vision.PurpleOrGreen;
 import org.firstinspires.ftc.teamcode.vision.aprilTagProcessor;
+import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 @Autonomous(name = "PinpointAuto", group = "enigma")
 public class SammysPinpointAuto extends LinearOpMode {
-    aprilTagProcessor aprilTagProcessor = new aprilTagProcessor(hardwareMap);
+    aprilTagProcessor AprilTagProcessor = new aprilTagProcessor(hardwareMap);
+    public AprilTagProcessor AprilTag;
     public GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");
     public double RCCX = 0.42;//robot center correction X
     public double RCCY = -4.375;//robot center correction Y
@@ -25,9 +26,11 @@ public class SammysPinpointAuto extends LinearOpMode {
     double displacement;
     double angle;
     double angleAdd;
+    public int [] DESIRED_TAG_ID = {21, 22, 23};
     enum partsOfAuto{
-        move,
+        move1,
         intake,
+        move2,
         rotate,
         outtake
     }
@@ -48,10 +51,9 @@ public class SammysPinpointAuto extends LinearOpMode {
     }
     boolean intaking = false;
     double waitForIntake;
-    partsOfAuto PartsOfAuto = partsOfAuto.move;
+    partsOfAuto PartsOfAuto = partsOfAuto.move2;
     //define gamepad1
     public Gamepad gamepad1;
-    PurpleOrGreen [] motif;
     // declare wheels
     public DcMotor leftFrontDrive;
     public DcMotor leftBackDrive;
@@ -67,12 +69,22 @@ public class SammysPinpointAuto extends LinearOpMode {
     int artifactArrayPos;
     int motifPos = 0;
     boolean targetChecked = false;
+    boolean starting = true;
+    boolean dontMove = false;
+    boolean isRed;
     int timesAttempted = 1;
     double robotSize = 12;
+    double [] shotPointsRed = {80,90,125,130};
+    double [] shotPointsBlue = {65,90,20,130};
     double roboLocity;//Make SURE is in inches/second
     double roboLangle;//Make SURE is in degrees/second
     double fps;
     double movementProportions;
+    PurpleOrGreen [] motif;
+    double redGoalX;
+    double redGoalY;
+    double blueGoalX;
+    double blueGoalY;
     artifactsPos[] artifactArray = {
     //Compared to the team in questions goal
 
@@ -180,37 +192,82 @@ public class SammysPinpointAuto extends LinearOpMode {
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
         pinpoint.resetPosAndIMU();
         pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
+        //AprilTag = new AprilTagProcessor.Builder().build();
+        //AprilTag.setDecimation(2);
+        AprilTagProcessor.initialize();
 
         while (!opModeIsActive()) {
+            if (gamepad1.a){
+                pinpoint.setHeading(Math.PI, AngleUnit.RADIANS);
+            }
         }
         waitForStart();
         while (opModeIsActive()) {
-            if (pinpoint.getPosX(DistanceUnit.INCH) + RCCX == targetX && pinpoint.getPosY(DistanceUnit.INCH) + RCCY == targetY && PartsOfAuto == partsOfAuto.move) {
-            PartsOfAuto = partsOfAuto.intake;
-            intaking = true;
-            waitForIntake = System.currentTimeMillis();
-            } else if (PartsOfAuto == partsOfAuto.intake && System.currentTimeMillis() > waitForIntake + 300) {
-                intaking = false;
-                PartsOfAuto = partsOfAuto.move;
-            }
-            if (intaking) {
-                intake();
-            }
-            pinpoint.update();
-            motif = aprilTagProcessor.motif();
-            if (motif != null) {
-                setArtifactTargets(motif[motifPos]);
-            }
-            if (targetChecked) {
-                movementMath();
-            }else{
-                targetsXY = finalizeTarget(targetX,targetY);
-                targetX = targetsXY [0];
-                targetY = targetsXY [1];
-                leftFrontDrive.setPower(0);
-                leftBackDrive.setPower(0);
-                rightFrontDrive.setPower(0);
-                rightBackDrive.setPower(0);
+            if (starting) {
+                leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+                if (AprilTagProcessor.findmotif() != null) {
+                    leftFrontDrive.setPower(0.5);
+                    leftBackDrive.setPower(0.5);
+                    rightFrontDrive.setPower(-0.5);
+                    rightBackDrive.setPower(-0.5);
+                    starting = false;
+                } else {
+                    leftFrontDrive.setPower(0);
+                    leftBackDrive.setPower(0);
+                    rightFrontDrive.setPower(0);
+                    rightBackDrive.setPower(0);
+                    pinpoint.setPosX((-AprilTagProcessor.aprilCoords()) * Math.sin(pinpoint.getHeading(AngleUnit.RADIANS)), DistanceUnit.INCH);
+                    pinpoint.setPosY((-AprilTagProcessor.aprilCoords()) * Math.cos(pinpoint.getHeading(AngleUnit.RADIANS)), DistanceUnit.INCH);
+                }
+            }else {
+                if (pinpoint.getPosX(DistanceUnit.INCH) + RCCX == targetX && pinpoint.getPosY(DistanceUnit.INCH) + RCCY == targetY && PartsOfAuto == partsOfAuto.move1) {
+                    PartsOfAuto = partsOfAuto.intake;
+                    intaking = true;
+                    waitForIntake = System.currentTimeMillis();
+                } else if (PartsOfAuto == partsOfAuto.intake && System.currentTimeMillis() > waitForIntake + 300) {
+                    intaking = false;
+                    PartsOfAuto = partsOfAuto.move2;
+                }
+                if (intaking) {
+                    intake();
+                }
+                pinpoint.update();
+                motif = AprilTagProcessor.findmotif();
+                if (aprilTagProcessor.motif[motifPos] != null && PartsOfAuto == partsOfAuto.move1) {
+                    setArtifactTargets(aprilTagProcessor.motif[motifPos]);
+                } else if (PartsOfAuto == partsOfAuto.move2){
+                    if (isRed){
+                    }else{
+
+                    }
+                }else if (PartsOfAuto == partsOfAuto.rotate){
+                    if (isRed) {
+                        targetX = redGoalX;
+                        targetY = redGoalY;
+                        targetsXY = new double[]{redGoalX, redGoalY};
+                    }else {
+                        targetX = blueGoalX;
+                        targetY = blueGoalY;
+                        targetsXY = new double[]{blueGoalX, blueGoalY};
+                    }
+                        dontMove = true;
+                }else if (PartsOfAuto == partsOfAuto.outtake){
+                    
+                }
+                if (targetChecked) {
+                    movementMath();
+                } else if (PartsOfAuto == partsOfAuto.move1 || PartsOfAuto == partsOfAuto.move2){
+                    targetsXY = finalizeTarget(targetX, targetY);
+                    targetX = targetsXY[0];
+                    targetY = targetsXY[1];
+                    leftFrontDrive.setPower(0);
+                    leftBackDrive.setPower(0);
+                    rightFrontDrive.setPower(0);
+                    rightBackDrive.setPower(0);
+                }
             }
         }
     }
@@ -223,6 +280,11 @@ public class SammysPinpointAuto extends LinearOpMode {
         drive *= movementProportions;
         strafe *= movementProportions;
         //I HAVE DONE THEFT!
+        if (dontMove == true){
+            drive = 0;
+            strafe = 0;
+            dontMove = false;
+        }
         double leftFront = drive + turn/180 + strafe;
         double leftBack = drive + turn/180 - strafe;
         double rightFront = drive - turn/180 - strafe;
@@ -249,7 +311,7 @@ public class SammysPinpointAuto extends LinearOpMode {
         rightFrontDrive.setPower(rightFront * speed);
         rightBackDrive.setPower(rightBack * speed);
     }
-    public double movementProportions(double displacement, double angleAdd){
+    public double movementProportions(double displacement, double angleAdd) {
         double moveTime = Math.pow(-1,0.5);
         double turnTime = Math.pow(-1,0.5);
         if ((-displacement + Math.pow(Math.pow(displacement,2)-4*roboLocity*displacement,0.5))/2 > 0){

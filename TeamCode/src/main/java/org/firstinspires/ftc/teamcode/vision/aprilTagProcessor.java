@@ -8,7 +8,6 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagDetection;
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 import java.util.List;
-
 public class aprilTagProcessor {
     private VisionPortal visionPortal;               // Used to manage the video source.
     private AprilTagProcessor aprilTag;
@@ -16,6 +15,7 @@ public class aprilTagProcessor {
     public HardwareMap hardwareMap;
     public boolean targetFound = false;
     public double sizeAt1INCH;
+    public static PurpleOrGreen [] motif = null;
 
     public aprilTagProcessor(HardwareMap hardwareMap) {
         this.hardwareMap = hardwareMap;
@@ -33,8 +33,7 @@ public class aprilTagProcessor {
     public void initialize(){
         visionPortal = new VisionPortal.Builder().setCamera(hardwareMap.get(WebcamName.class, "Webcam 1")).addProcessor(aprilTag).build();
     }
-    public PurpleOrGreen [] motif (){
-        PurpleOrGreen [] motif = null;
+    public PurpleOrGreen [] findmotif() {
         List<AprilTagDetection> currentDetections = aprilTag.getDetections();
         for (AprilTagDetection detection : currentDetections){
             if (detection.metadata != null){
@@ -50,9 +49,9 @@ public class aprilTagProcessor {
         }
         return motif;
     }
-    /*public polarCords aprilCords() {
+    public double aprilCoords() {
         targetFound = false;
-        polarCords coords = null;
+        double coords = 0;
         // Step through the list of detected tags and look for a matching tag
         List<AprilTagDetection> currentDetections = aprilTag.getDetections();
         for (AprilTagDetection detection : currentDetections) {
@@ -60,14 +59,13 @@ public class aprilTagProcessor {
             if (detection.metadata != null) {
                 //Check if this is the tag we want
                 if (detection.id == 20) {
-                    coords = new polarCords(detection.rawPose.x, Math.atan(detection.rawPose.y/detection.rawPose.x));
+                    coords = detection.ftcPose.range;
                     // Yes, we want to use this tag.
                     targetFound = true;
                     break;  // don't look any further.
-                } else {
                 }
             }
         }
         return coords;
-    }*/
+    }
 }

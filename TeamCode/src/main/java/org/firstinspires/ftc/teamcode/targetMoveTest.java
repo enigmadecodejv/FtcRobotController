@@ -24,7 +24,7 @@ public class targetMoveTest extends LinearOpMode {
     public DcMotor leftBackDrive;
     public DcMotor rightFrontDrive;
     public DcMotor rightBackDrive;
-    public GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");
+    public GoBildaPinpointDriver pinpoint;
     public double headingChangeRCCX;
     public double headingChangeRCCY;
     public double heading;

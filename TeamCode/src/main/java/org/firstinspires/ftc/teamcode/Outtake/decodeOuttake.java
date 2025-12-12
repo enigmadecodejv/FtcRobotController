@@ -29,7 +29,7 @@ public class decodeOuttake {
         pastGamepad1 = currentGamepad1;
         currentGamepad1 = gamepad1;
         if (currentGamepad1.left_trigger > 0.25) {
-            outtakeServo.setPosition(0.91);
+            outtakeServo.setPosition(0.88);
         } else {
             outtakeServo.setPosition(0.96);
         }
@@ -40,8 +40,8 @@ public class decodeOuttake {
             shouldTheOutakeMotorsBeOnHighPower = true;
         }
         if (!shouldTheOutakeMotorsBeOnHighPower) {
-            outtakeMotor.setPower(-0.5);
-            outtakeMotor2.setPower(-0.5);
+            outtakeMotor.setPower(-0.55);
+            outtakeMotor2.setPower(-0.55);
         } else {
             outtakeMotor.setPower(-0.7);
             outtakeMotor2.setPower(-0.7);
