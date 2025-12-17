@@ -7,6 +7,7 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 public class decodeDriveCode {
     //define gamepad1
     public Gamepad gamepad1;
+    public double drive;
 
     // declare wheels
     public DcMotor leftFrontDrive;
@@ -33,7 +34,7 @@ public class decodeDriveCode {
         // This way it's also easy to just drive straight, or just turn.\
         double boostMultiplier = 1.2;
 
-        double drive = -gamepad1.left_stick_y * boostMultiplier;
+        drive = -gamepad1.left_stick_y * boostMultiplier;
         double turn = gamepad1.right_stick_x;
         double strafe = gamepad1.left_stick_x * boostMultiplier;
 

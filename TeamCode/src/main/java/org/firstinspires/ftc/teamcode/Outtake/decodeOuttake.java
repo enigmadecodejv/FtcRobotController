@@ -14,6 +14,8 @@ public class decodeOuttake {
     public Gamepad pastGamepad1;
     public HardwareMap hardwareMap;
     public boolean shouldTheOutakeMotorsBeOnHighPower = false;
+    public boolean lowPower = false;
+    public boolean zeroPower = false;
 
     public decodeOuttake(HardwareMap hardwareMap, Gamepad gamepad1) {
         this.gamepad1 = gamepad1;
@@ -35,13 +37,28 @@ public class decodeOuttake {
         }
         if (currentGamepad1.a) {
             shouldTheOutakeMotorsBeOnHighPower = false;
+            zeroPower = false;
         }
         if (currentGamepad1.y) {
             shouldTheOutakeMotorsBeOnHighPower = true;
+            zeroPower = false;
         }
-        if (!shouldTheOutakeMotorsBeOnHighPower) {
-            outtakeMotor.setPower(-0.55);
-            outtakeMotor2.setPower(-0.55);
+        if (currentGamepad1.b || currentGamepad1.x) {
+            lowPower = true;
+            zeroPower = false;
+        }
+        if (currentGamepad1.dpad_down || currentGamepad1.dpad_left || currentGamepad1.dpad_up || currentGamepad1.dpad_right){
+            zeroPower = true;
+        }
+        if (zeroPower){
+            outtakeMotor.setPower(0);
+            outtakeMotor2.setPower(0);
+        }else if (!shouldTheOutakeMotorsBeOnHighPower && lowPower) {
+            outtakeMotor.setPower(-0.6);
+            outtakeMotor2.setPower(-0.6);
+        } else if (!shouldTheOutakeMotorsBeOnHighPower) {
+            outtakeMotor.setPower(-0.6);
+            outtakeMotor2.setPower(-0.6);
         } else {
             outtakeMotor.setPower(-0.7);
             outtakeMotor2.setPower(-0.7);
