@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -13,41 +14,22 @@ import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 @Autonomous(name = "PinpointAuto", group = "enigma")
 public class SammysPinpointAuto extends LinearOpMode {
-    aprilTagProcessor AprilTagProcessor = new aprilTagProcessor(hardwareMap);
-    public AprilTagProcessor AprilTag;
-    public GoBildaPinpointDriver pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");
+    generalMethodsAuto methods = new generalMethodsAuto();
+    aprilTagProcessor AprilTagProcessor;
+    targetMoveTest targetMove;
+    targetingSystem targeting;
+    public GoBildaPinpointDriver pinpoint;
     public double RCCX = 0.42;//robot center correction X
     public double RCCY = -4.375;//robot center correction Y
     double [] targetsXY;
     double targetX;
     double targetY;
-    double displacementX;
-    double displacementY;
-    double displacement;
-    double angle;
-    double angleAdd;
-    public int [] DESIRED_TAG_ID = {21, 22, 23};
     enum partsOfAuto{
         move1,
         intake,
         move2,
         rotate,
         outtake
-    }
-   static class artifactsPos {
-        public double x;
-        public double y;
-        PurpleOrGreen purpleOrGreen;
-        public artifactsPos(double x, double y, String PurpleorGreen) {
-            this.x = x;
-            this.y = y;
-            if (PurpleorGreen.equals("purple")) {
-                this.purpleOrGreen = PurpleOrGreen.purple;
-            }else if (PurpleorGreen.equals("green")){
-                this.purpleOrGreen = PurpleOrGreen.green;
-            }
-        }
-        public double radius = 5;
     }
     boolean intaking = false;
     double waitForIntake;
@@ -60,8 +42,9 @@ public class SammysPinpointAuto extends LinearOpMode {
     public DcMotor rightFrontDrive;
     public DcMotor rightBackDrive;
     public DcMotor intake;
-    public double speed = 0.75;
-    public int quadrant;
+    public DcMotor outtakeMotor;
+    public DcMotor outtakeMotor2;
+    public Servo outtakeServo;
     public double artifactMinDisplacement = 16265;
     double artifactDisplacementX;
     double artifactDisplacementY;
@@ -78,122 +61,35 @@ public class SammysPinpointAuto extends LinearOpMode {
     double [] shotPointsBlue = {65,90,20,130};
     double roboLocity;//Make SURE is in inches/second
     double roboLangle;//Make SURE is in degrees/second
-    double fps;
     double movementProportions;
     PurpleOrGreen [] motif;
     double redGoalX;
     double redGoalY;
     double blueGoalX;
     double blueGoalY;
-    artifactsPos[] artifactArray = {
-    //Compared to the team in questions goal
-
-    //blue side
-    //nearest
-    new artifactsPos(29,84, "purple"),
-    new artifactsPos(24,84, "purple"),
-    new artifactsPos(19,84, "green"),
-
-    //middle
-    new artifactsPos(29,60, "purple"),
-    new artifactsPos(24,60, "green"),
-    new artifactsPos(19,60, "purple"),
-
-    //farthest
-    new artifactsPos(29,36, "green"),
-    new artifactsPos(24,36, "purple"),
-    new artifactsPos(19,36, "purple"),
-
-
-    //red side
-    //nearest
-    new artifactsPos(125,84,"green"),
-    new artifactsPos(120, 84, "purple"),
-    new artifactsPos(115, 84, "purple"),
-
-    //middle
-    new artifactsPos(125, 60, "purple"),
-    new artifactsPos(120, 60, "green"),
-    new artifactsPos(115, 60, "purple"),
-
-    //farthest
-    new artifactsPos(125, 36, "purple"),
-    new artifactsPos(120, 36, "purple"),
-    new artifactsPos(115, 36, "green")
-    };
-    public double drive() {
-        //find x and y position compared to robot (x - xnot)
-        displacementX = targetX - pinpoint.getPosX(DistanceUnit.INCH) + RCCX;
-        displacementY = targetY - pinpoint.getPosY(DistanceUnit.INCH) + RCCY;
-        //find x and y positon in polar coordinates (r@theta)
-        displacement = Math.pow(Math.pow(displacementX, 2) + Math.pow(displacementY, 2), 0.5);
-        angle = Math.atan(displacementY / displacementX);
-        if (angle > Math.PI * 2){
-            angle = angle - Math.PI * 2;
-        }else if (angle < 0){
-            angle = angle + Math.PI;
-        }
-        if (displacementX > 0 && displacementY > 0){
-            if (angle > Math.PI/2){
-                angle = angle + Math.PI;
-            }
-        }else if (displacementX < 0 && displacementY < 0){
-            if (angle < Math.PI/2 || angle > Math.PI){
-                angle += Math.PI;
-            }
-        }else if (displacementX < 0 && displacementY < 0){
-            if (angle < Math.PI || angle > 3 * Math.PI/2){
-                angle -= Math.PI;
-            }else if (displacementX > 0 && displacementY < 0){
-                if (angle < 3*Math.PI/2){
-                    angle -= Math.PI;
-                }
-            }
-        }
-        //find a theta based on the robot's rotation and angle
-        angleAdd = angle - pinpoint.getHeading(AngleUnit.RADIANS);
-        //use that theta to find polar coordinates
-        double drive;
-        //find quadrant
-        if (displacementX > 0 && displacementY > 0){
-            quadrant = 1;
-        }else if (displacementX < 0 && displacementY > 0){
-            quadrant = 2;
-        }else if (displacementX < 0 && displacementY < 0){
-            quadrant = 3;
-        }else if (displacementX > 0 && displacementY < 0){
-            quadrant = 4;
-        }
-        //use that quadrant to find the x coordinate based on sin and cos
-        if (quadrant%2 == 0){
-            drive = Math.sin(angleAdd) * displacement;
-        }else {
-            drive = Math.cos(angleAdd) * displacement;
-        }
-            return drive;
-    }
-    public double strafe() {
-        //use that quadrant to find the y coordinate based on sin and cos
-        double strafe;
-        if (quadrant%2 == 0){
-            strafe = Math.cos(angleAdd) * displacement;
-        }else {
-            strafe = Math.sin(angleAdd) * displacement;
-        }
-        return strafe;
-    }
-    public double turn() {
-        //find how much the robot needs to turn
-        return angleAdd * 180/Math.PI;
-
-    }
     public void runOpMode() {
+        AprilTagProcessor = new aprilTagProcessor(hardwareMap);
+        targetMove = new targetMoveTest(/*hardwareMap*/);//todo fix targetMoveTest to work in another opMode when testing is finished
+        targeting = new targetingSystem(/*hardwareMap*/);//todo fix targetingSystem to work in another opMode when testing is finished
+        leftFrontDrive = hardwareMap.get(DcMotor.class, "FrontLeft");
+        leftBackDrive = hardwareMap.get(DcMotor.class, "RearLeft");
+        rightFrontDrive = hardwareMap.get(DcMotor.class, "FrontRight");
+        rightBackDrive = hardwareMap.get(DcMotor.class, "RearRight");
+
+        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        outtakeMotor = hardwareMap.get(DcMotor.class, "ShooterRight");
+        outtakeMotor2 = hardwareMap.get(DcMotor.class, "ShooterLeft");
+        outtakeMotor2.setDirection(DcMotor.Direction.REVERSE);
+        outtakeServo = hardwareMap.get(Servo.class, "Feeder");
+        intake = hardwareMap.get(DcMotor.class, "Intake");
+        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");
         pinpoint.setOffsets(2, 2.5, DistanceUnit.INCH);
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
         pinpoint.resetPosAndIMU();
         pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
-        //AprilTag = new AprilTagProcessor.Builder().build();
-        //AprilTag.setDecimation(2);
         AprilTagProcessor.initialize();
 
         while (!opModeIsActive()) {
@@ -208,12 +104,11 @@ public class SammysPinpointAuto extends LinearOpMode {
                 leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
                 rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
                 rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-                if (AprilTagProcessor.findmotif() != null) {
+                if (AprilTagProcessor.findmotif() == null) {
                     leftFrontDrive.setPower(0.5);
                     leftBackDrive.setPower(0.5);
                     rightFrontDrive.setPower(-0.5);
                     rightBackDrive.setPower(-0.5);
-                    starting = false;
                 } else {
                     leftFrontDrive.setPower(0);
                     leftBackDrive.setPower(0);
@@ -221,9 +116,11 @@ public class SammysPinpointAuto extends LinearOpMode {
                     rightBackDrive.setPower(0);
                     pinpoint.setPosX((-AprilTagProcessor.aprilCoords()) * Math.sin(pinpoint.getHeading(AngleUnit.RADIANS)), DistanceUnit.INCH);
                     pinpoint.setPosY((-AprilTagProcessor.aprilCoords()) * Math.cos(pinpoint.getHeading(AngleUnit.RADIANS)), DistanceUnit.INCH);
+                    starting = false;
                 }
             }else {
-                if (pinpoint.getPosX(DistanceUnit.INCH) + RCCX == targetX && pinpoint.getPosY(DistanceUnit.INCH) + RCCY == targetY && PartsOfAuto == partsOfAuto.move1) {
+                double [] RCC = methods.headingChangeRCCXandRCCY(pinpoint.getHeading(AngleUnit.RADIANS));
+                if (pinpoint.getPosX(DistanceUnit.INCH) + RCC[0] == targetX && pinpoint.getPosY(DistanceUnit.INCH) + RCC[1] == targetY && PartsOfAuto == partsOfAuto.move1) {
                     PartsOfAuto = partsOfAuto.intake;
                     intaking = true;
                     waitForIntake = System.currentTimeMillis();
@@ -237,7 +134,7 @@ public class SammysPinpointAuto extends LinearOpMode {
                 pinpoint.update();
                 motif = AprilTagProcessor.findmotif();
                 if (aprilTagProcessor.motif[motifPos] != null && PartsOfAuto == partsOfAuto.move1) {
-                    setArtifactTargets(aprilTagProcessor.motif[motifPos]);
+                    targeting.setArtifactTargets(aprilTagProcessor.motif[motifPos]);
                 } else if (PartsOfAuto == partsOfAuto.move2){
                     if (isRed){
                     }else{
@@ -258,9 +155,9 @@ public class SammysPinpointAuto extends LinearOpMode {
                     
                 }
                 if (targetChecked) {
-                    movementMath();
+                    targetMove.movementMath();
                 } else if (PartsOfAuto == partsOfAuto.move1 || PartsOfAuto == partsOfAuto.move2){
-                    targetsXY = finalizeTarget(targetX, targetY);
+                    targetsXY = targeting.finalizeTarget(targetX, targetY);
                     targetX = targetsXY[0];
                     targetY = targetsXY[1];
                     leftFrontDrive.setPower(0);
@@ -271,138 +168,12 @@ public class SammysPinpointAuto extends LinearOpMode {
             }
         }
     }
-    public void movementMath() {
-        double drive = drive();
-        double strafe = strafe();
-        double turn = turn();
-        drive /= drive+strafe;
-        strafe /= drive+strafe;
-        drive *= movementProportions;
-        strafe *= movementProportions;
-        //I HAVE DONE THEFT!
-        if (dontMove == true){
-            drive = 0;
-            strafe = 0;
-            dontMove = false;
-        }
-        double leftFront = drive + turn/180 + strafe;
-        double leftBack = drive + turn/180 - strafe;
-        double rightFront = drive - turn/180 - strafe;
-        double rightBack = drive - turn/180 + strafe;
+    public double [] findClosestShootPoint(){
+        if (isRed){
 
-        // Normalize the values so neither exceed +/- 1.0
-
-        double maxFront = Math.max(Math.abs(leftFront), Math.abs(rightFront));
-        double maxBack = Math.max(Math.abs(leftBack),Math.abs(rightBack));
-        double max = Math.max(maxFront,maxBack);
-        if (max > 1.0)
-        {
-            leftFront /= max;
-            rightFront /= max;
-            leftBack /= max;
-            rightBack /= max;
-        }
-
-
-
-        // Output the safe vales to the motor drives.
-        leftFrontDrive.setPower(leftFront * speed);
-        leftBackDrive.setPower(leftBack * speed);
-        rightFrontDrive.setPower(rightFront * speed);
-        rightBackDrive.setPower(rightBack * speed);
-    }
-    public double movementProportions(double displacement, double angleAdd) {
-        double moveTime = Math.pow(-1,0.5);
-        double turnTime = Math.pow(-1,0.5);
-        if ((-displacement + Math.pow(Math.pow(displacement,2)-4*roboLocity*displacement,0.5))/2 > 0){
-            moveTime = (-displacement + Math.pow(Math.pow(displacement,2)-4*roboLocity*displacement,0.5))/2;
-        }else if ((-displacement - Math.pow(Math.pow(displacement,2)-4*roboLocity*displacement,0.5))/2 > 0){
-            moveTime = (-displacement - Math.pow(Math.pow(displacement,2)-4*roboLocity*displacement,0.5))/2;
         }else{
-            telemetry.addData("NOOOOO!", "Help please!");
+
         }
-        if ((-displacement + Math.pow(Math.pow(displacement,2)-4*roboLangle*displacement,0.5))/2 > 0){
-            turnTime = (-displacement + Math.pow(Math.pow(displacement,2)-4*roboLangle*displacement,0.5))/2;
-        }else if ((-displacement - Math.pow(Math.pow(displacement,2)-4*roboLangle*displacement,0.5))/2 > 0){
-            turnTime = (-displacement - Math.pow(Math.pow(displacement,2)-4*roboLangle*displacement,0.5))/2;
-        }else{
-            telemetry.addData("NOOOOO!", "Help please!");
-        }
-        //Returns what drive and strafe should add up to
-        return moveTime/(moveTime+turnTime);
-    }
-    public void setArtifactTargets(PurpleOrGreen color){
-        for (int i = 0; i < artifactArray.length - 1; i++){
-            if (artifactArray[i].purpleOrGreen == color){
-                artifactDisplacementX = artifactArray[i].x - pinpoint.getPosX(DistanceUnit.INCH) - RCCX;
-                artifactDisplacementY = artifactArray[i].y - pinpoint.getPosY(DistanceUnit.INCH) - RCCY;
-                artifactDisplacementXY = Math.sqrt(Math.pow(artifactDisplacementX,2) + Math.pow(artifactDisplacementY,2));
-                if (artifactDisplacementXY < artifactMinDisplacement) {
-                    artifactMinDisplacement = artifactDisplacementXY;
-                    artifactArrayPos = i;
-                }
-            }
-        }
-        targetX = artifactArray[artifactArrayPos].x;
-        targetY = artifactArray[artifactArrayPos].y;
-        targetChecked = false;
-    }
-    public int checkIntersection(double targetX, double targetY){
-        //returns the position in artifactArray of the first artifact (in artifactArray) the line segment from robot to target intersects with
-        double slope = (targetX - pinpoint.getPosX(DistanceUnit.INCH) + RCCX)/(targetY - pinpoint.getPosY(DistanceUnit.INCH) + RCCY);
-        double linePosY = pinpoint.getPosY(DistanceUnit.INCH) + RCCY - (slope * (pinpoint.getPosX(DistanceUnit.INCH) + RCCX));
-        double[] intersectionX;
-        double coeffXpwr2;
-        double coeffXpwr1;
-        double coeffXpwr0;
-        int firstIntersection = 16265;
-        double[] interval;
-        for (int j = 0; j < artifactArray.length - 1; j++){
-            coeffXpwr2 = Math.pow(slope,2) + 1;
-            coeffXpwr1 = 2*((slope*(linePosY - artifactArray[j].y)) - artifactArray[j].x);
-            coeffXpwr0 = Math.pow(linePosY - artifactArray[j].y,2) - Math.pow(artifactArray[j].radius,2);
-            intersectionX = new double[]{(-coeffXpwr1 + Math.sqrt(Math.pow(coeffXpwr1, 2) - 4 * coeffXpwr2 * coeffXpwr0)) / (2 * coeffXpwr2), (-coeffXpwr1 - Math.sqrt(Math.pow(coeffXpwr1, 2) - 4 * coeffXpwr2 * coeffXpwr0)) / (2 * coeffXpwr2)};
-            if (targetX > pinpoint.getPosX(DistanceUnit.INCH) + RCCX){
-                interval = new double[] {pinpoint.getPosX(DistanceUnit.INCH) + RCCX, targetX};
-            }else if (artifactArray[j].x < pinpoint.getPosX(DistanceUnit.INCH) + RCCX){
-                interval = new double[] {targetX, pinpoint.getPosX(DistanceUnit.INCH) + RCCX};
-            }else{
-                interval = new double[]{0,0};
-            }
-            if (interval[0] <= intersectionX[0] && intersectionX[0] <= interval[1] || interval[0] <= intersectionX[1] && intersectionX[1] <= interval[1]){
-                firstIntersection = j;
-                break;
-            }
-        }
-        return firstIntersection;
-    }
-    public double[] finalizeTarget(double targetX, double targetY){
-        double [] newTarget;
-        int intersect = checkIntersection(targetX,targetY);
-        if (intersect != 16265){
-            if (timesAttempted%2 != 0){
-                if (targetX - pinpoint.getPosX(DistanceUnit.INCH) - RCCX > targetY - pinpoint.getPosY(DistanceUnit.INCH) - RCCY){
-                    newTarget = new double [] {artifactArray[intersect].x,artifactArray[intersect].y + (artifactArray[intersect].radius + robotSize)*(Math.floor(timesAttempted/2)+1)};
-                }else{
-                    newTarget = new double [] {artifactArray[intersect].x + (artifactArray[intersect].radius + robotSize)*(Math.floor(timesAttempted/2)+1), artifactArray[intersect].y};
-                }
-            }else{
-                if (targetX - pinpoint.getPosX(DistanceUnit.INCH) - RCCX > targetY - pinpoint.getPosY(DistanceUnit.INCH) - RCCY){
-                    newTarget = new double [] {artifactArray[intersect].x,artifactArray[intersect].y - (artifactArray[intersect].radius + robotSize)*(Math.floor(timesAttempted/2)+1)};
-                }else{
-                    newTarget = new double [] {artifactArray[intersect].x - (artifactArray[intersect].radius + robotSize)*(Math.floor(timesAttempted/2)+1), artifactArray[intersect].y};
-                }
-            }
-            targetChecked = false;
-        }else{
-            newTarget = new double[] {targetX, targetY};
-            targetChecked = true;
-            drive();
-            turn();
-            strafe();
-            movementProportions = movementProportions(displacement,angleAdd);
-        }
-        return newTarget;
     }
     public void intake () {
         intake.setPower(1);

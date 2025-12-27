@@ -119,7 +119,7 @@ public class DecodeTeleop extends LinearOpMode {
 
     //For a given angle, x, and y distance, find start velocity
     double angle = Math.PI/4;
-    public double getVelocityShot(){
+    /*public double getVelocityShot(){
         if (isRed){
             goalDistanceX = redGoalX - pinpoint.getPosX(DistanceUnit.INCH);
             goalDistanceY = redGoalY - pinpoint.getPosY(DistanceUnit.INCH);
@@ -131,9 +131,19 @@ public class DecodeTeleop extends LinearOpMode {
         if (goalDistanceZ - Math.tan(angle) * goalDistanceXY == 0){
             return Math.pow(-1,0.5);
         }
-        double velocityXY = Math.pow(gravity*goalDistanceXY/(2*(goalDistanceZ - Math.tan(angle) * goalDistanceXY)),0.5);
+        double velocityXY = Math.pow(gravity*Math.pow(goalDistanceXY,2)/(2*(goalDistanceZ - Math.tan(angle) * goalDistanceXY)),0.5);
         double velocityZ = velocityXY * Math.tan(angle);
         return Math.pow(Math.pow(velocityXY,2)+Math.pow(velocityZ,2),0.5);
+    }*/
+    public double getVelocityShot(){
+        if (isRed){
+            goalDistanceX = redGoalX - pinpoint.getPosX(DistanceUnit.INCH);
+            goalDistanceY = redGoalY - pinpoint.getPosY(DistanceUnit.INCH);
+        }else if (!isRed){
+            goalDistanceX = blueGoalX - pinpoint.getPosX(DistanceUnit.INCH);
+            goalDistanceY = blueGoalY - pinpoint.getPosY(DistanceUnit.INCH);
+        }
+        return (Math.sqrt(-1 * gravity * Math.pow(goalDistanceX,2)/(goalDistanceX*Math.sin(2 * angle) - 2*goalDistanceY*Math.pow(Math.cos(angle),2))));
     }
     public void autoOuttake(double speed){
         powerGood = PowerGood.yes;
@@ -251,7 +261,7 @@ public class DecodeTeleop extends LinearOpMode {
 */
     private void mainLoop() {
         //run functions
-        /*if (gamepad2.left_trigger > 0.25 && powerGood == PowerGood.yes){
+        if (gamepad2.left_trigger > 0.25 && powerGood == PowerGood.yes){
             outtakeServo.setPosition(0.91);
             telemetry.addLine("Shooting");
         }else if (powerGood == PowerGood.tooFar){
@@ -264,15 +274,10 @@ public class DecodeTeleop extends LinearOpMode {
         }
         telemetry.addData("power: ",power);
         telemetry.addData("speed:", getVelocityShot());
-        autoOuttake(getVelocityShot());*/
+        autoOuttake(getVelocityShot());
         driveCode.runWheels();
         intakeCode.intake();
-        outtakeCode.outtake();
-        //if (variableAngle) {
-            //variableOuttake(getShootVelocity(), getShootAngle());
-        //}else if (!variableAngle){
-            //autoOuttake(getVelocityShot());
-        //}
+        //outtakeCode.outtake();
         telemetry.update();
         pinpoint.update();
     }

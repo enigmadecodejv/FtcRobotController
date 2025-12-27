@@ -9,89 +9,48 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 @Autonomous(name = "moveTest", group = "enigma")
 public class targetMoveTest extends LinearOpMode {
-    public double displacementX;
-    public double displacementY;
-    public double displacement;
-    public double targetX = 150;
-    public double targetY = 150;
-    public double angle;
-    public double angleAdd;
+    public generalMethodsAuto methods = new generalMethodsAuto();
+    public double targetX = 15;
+    public double targetY = 15;
     public int quadrant;
     public double speed = 0.75;
-    public double RCCY = -4.375;//robot center correction Y
-    public double RCCX = 0.42;//robot center correction X
     public DcMotor leftFrontDrive;
     public DcMotor leftBackDrive;
     public DcMotor rightFrontDrive;
     public DcMotor rightBackDrive;
     public GoBildaPinpointDriver pinpoint;
-    public double headingChangeRCCX;
-    public double headingChangeRCCY;
-    public double heading;
+    public double drive;
+    public double strafe;
+    public double turn;
+    public double [] headingChange;
+    public double [] moveVariables;
+    public double roboLocity; //make SURE is in inches/second
+    public double roboLangle; //make SURE is in degrees/second
     public double drive() {
-        heading = pinpoint.getHeading(AngleUnit.RADIANS);
-        if (heading < 0){
-            heading += 2*Math.PI;
-        }
-        if (heading < Math.PI/2 || (heading < 3*Math.PI/2 && heading >= Math.PI)){
-            headingChangeRCCX = RCCX * Math.cos(heading) + RCCY * Math.cos(heading);
-            headingChangeRCCY = RCCX * Math.sin(heading) + RCCY * Math.sin(heading);
-        }else {
-            headingChangeRCCX = RCCX * Math.sin(heading) + RCCY * Math.sin(heading);
-            headingChangeRCCY = RCCX * Math.cos(heading) + RCCY * Math.cos(heading);
-        }
-        //find x and y position compared to robot (x - xnot)
-        displacementX = targetX - pinpoint.getPosX(DistanceUnit.INCH) + headingChangeRCCX;
-        displacementY = targetY - pinpoint.getPosY(DistanceUnit.INCH) + headingChangeRCCY;
-        //find x and y positon in polar coordinates (r@theta)
-        displacement = Math.pow(Math.pow(displacementX, 2) + Math.pow(displacementY, 2), 0.5);
-        angle = Math.atan(displacementY / displacementX);
-        if (angle > Math.PI * 2){
-            angle = angle - Math.PI * 2;
-        }else if (angle < 0){
-            angle = angle + Math.PI;
-        }
-        if (displacementX > 0 && displacementY > 0){
-            if (angle > Math.PI/2){
-                angle = angle + Math.PI;
-            }
-        }else if (displacementX < 0 && displacementY > 0){
-            if (angle < Math.PI/2 || angle > Math.PI){
-                angle += Math.PI;
-            }
-        }else if (displacementX < 0 && displacementY < 0){
-            if (angle < Math.PI || angle > 3 * Math.PI/2){
-                angle -= Math.PI;
-            }else if (displacementX > 0 && displacementY < 0){
-                if (angle < 3*Math.PI/2){
-                    angle -= Math.PI;
-                }
-            }
-        }
-        //find a theta based on the robot's rotation and angle
-        angleAdd = angle - pinpoint.getHeading(AngleUnit.RADIANS);
-        if (angleAdd >= 2*Math.PI){
-            angleAdd = angleAdd - 2 * Math.PI;
-        }else if (angleAdd < 0){
-            angleAdd = angleAdd + 2 * Math.PI;
-        }
+        headingChange = methods.headingChangeRCCXandRCCY(pinpoint.getHeading(AngleUnit.RADIANS));
+        moveVariables = methods.findDisplacementAndAngleAdd(
+                pinpoint.getPosX(DistanceUnit.INCH) + headingChange[0],
+                pinpoint.getPosY(DistanceUnit.INCH) + headingChange[1],
+                pinpoint.getHeading(AngleUnit.RADIANS),
+                targetX,
+                targetY);
         //use that theta to find polar coordinates
         double drive;
         //find quadrant
-        if (angleAdd < Math.PI/2){
+        if (moveVariables[1] < Math.PI/2){
             quadrant = 1;
-        }else if (angleAdd >= Math.PI/2 && angleAdd < Math.PI){
+        }else if (moveVariables[1] >= Math.PI/2 && moveVariables[1] < Math.PI){
             quadrant = 2;
-        }else if (angleAdd >= Math.PI && angleAdd < 3*Math.PI/2){
+        }else if (moveVariables[1] >= Math.PI && moveVariables[1] < 3*Math.PI/2){
             quadrant = 3;
-        }else if (angleAdd >= 3*Math.PI/2){
+        }else if (moveVariables[1] >= 3*Math.PI/2){
             quadrant = 4;
         }
         //use that quadrant to find the x coordinate based on sin and cos
         if (quadrant%2 == 0){
-            drive = Math.sin(angleAdd) * displacement;
+            drive = Math.sin(moveVariables[1]) * moveVariables[0];
         }else {
-            drive = Math.cos(angleAdd) * displacement;
+            drive = Math.cos(moveVariables[1]) * moveVariables[0];
         }
         return drive;
     }
@@ -99,21 +58,44 @@ public class targetMoveTest extends LinearOpMode {
         //use that quadrant to find the y coordinate based on sin and cos
         double strafe;
         if (quadrant%2 == 0){
-            strafe = Math.cos(angleAdd) * displacement;
+            strafe = Math.cos(moveVariables[1]) * moveVariables[0];
         }else {
-            strafe = Math.sin(angleAdd) * displacement;
+            strafe = Math.sin(moveVariables[1]) * moveVariables[0];
         }
         return strafe;
     }
-    /*public double turn() {
+    public double turn() {
         //find how much the robot needs to turn
-        return angleAdd * 180/Math.PI;
+        return moveVariables[1] * 180/Math.PI;
 
-    }*/
+    }
+    public double movementProportions(double displacement, double angleAdd) {
+        double moveTime = Math.pow(-1,0.5);
+        double turnTime = Math.pow(-1,0.5);
+        if ((-displacement + Math.pow(Math.pow(displacement,2)-4*roboLocity*displacement,0.5))/2 > 0){
+            moveTime = (-displacement + Math.pow(Math.pow(displacement,2)-4*roboLocity*displacement,0.5))/2;
+        }else if ((-displacement - Math.pow(Math.pow(displacement,2)-4*roboLocity*displacement,0.5))/2 > 0){
+            moveTime = (-displacement - Math.pow(Math.pow(displacement,2)-4*roboLocity*displacement,0.5))/2;
+        }else{
+            telemetry.addData("NOOOOO!", "Help please!");
+        }
+        if ((-displacement + Math.pow(Math.pow(displacement,2)-4*roboLangle*displacement,0.5))/2 > 0){
+            turnTime = (-displacement + Math.pow(Math.pow(displacement,2)-4*roboLangle*displacement,0.5))/2;
+        }else if ((-displacement - Math.pow(Math.pow(displacement,2)-4*roboLangle*displacement,0.5))/2 > 0){
+            turnTime = (-displacement - Math.pow(Math.pow(displacement,2)-4*roboLangle*displacement,0.5))/2;
+        }else{
+            telemetry.addData("NOOOOO!", "Help please!");
+        }
+        //Returns what drive and strafe should add up to
+        return moveTime/(moveTime+turnTime);
+    }
     public void movementMath() {
-        double drive = drive();
-        double strafe = strafe();
-        double turn = 0;
+        drive = drive();
+        strafe = strafe();
+        turn = turn();
+        double sumDriveStrafe = movementProportions(moveVariables[0], moveVariables[1]) * turn();
+        drive = drive * sumDriveStrafe/(drive + strafe);
+        strafe = strafe * sumDriveStrafe/(drive + strafe);
         //I HAVE DONE THEFT!
         double leftFront = drive + turn/180 + strafe;
         double leftBack = drive + turn/180 - strafe;
@@ -125,14 +107,17 @@ public class targetMoveTest extends LinearOpMode {
         double maxFront = Math.max(Math.abs(leftFront), Math.abs(rightFront));
         double maxBack = Math.max(Math.abs(leftBack),Math.abs(rightBack));
         double max = Math.max(maxFront,maxBack);
-        if (max > 1.0)
-        {
+        if (max > 1.0) {
             leftFront /= max;
             rightFront /= max;
             leftBack /= max;
             rightBack /= max;
         }
-
+        telemetry.addData("Drive: ", drive);
+        telemetry.addData("Strafe: ", strafe);
+        telemetry.addData("PinpointHeading: ", pinpoint.getHeading(AngleUnit.RADIANS));
+        telemetry.addData("PinpointX: ", pinpoint.getPosX(DistanceUnit.INCH));
+        telemetry.addData("PinpointY: ", pinpoint.getPosY(DistanceUnit.INCH));
 
 
         // Output the safe vales to the motor drives.
@@ -147,11 +132,15 @@ public class targetMoveTest extends LinearOpMode {
         rightFrontDrive = hardwareMap.get(DcMotor.class, "FrontRight");
         rightBackDrive = hardwareMap.get(DcMotor.class, "RearRight");
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");
-        waitForStart();
+        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+        pinpoint.setOffsets(2, 2.5, DistanceUnit.INCH);
         pinpoint.resetPosAndIMU();
         pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
-        pinpoint.setOffsets(2, 2.5, DistanceUnit.INCH);
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
+        waitForStart();
         while (opModeIsActive()) {
         movementMath();
         if (gamepad1.a){
@@ -166,6 +155,8 @@ public class targetMoveTest extends LinearOpMode {
         if (gamepad1.y) {
             targetY -= 1;
         }
+        telemetry.update();
+        pinpoint.update();
         }
     }
 }
