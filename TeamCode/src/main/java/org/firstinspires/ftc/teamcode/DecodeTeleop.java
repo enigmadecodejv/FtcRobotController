@@ -287,6 +287,11 @@ public class DecodeTeleop extends LinearOpMode {
         driveCode = new decodeDriveCode(gamepad1, hardwareMap);
         intakeCode = new decodeIntake(hardwareMap, gamepad1);
         outtakeCode = new decodeOuttake(hardwareMap, gamepad1);
+        if (driveCode.drive > 0.25){
+            intakeCode.movingForward = true;
+        }else {
+            intakeCode.movingForward = false;
+        }
     }
 
     @Override
