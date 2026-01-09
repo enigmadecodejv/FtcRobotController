@@ -43,6 +43,7 @@ public class DecodeTeleop extends LinearOpMode {
     double motorRotSpeed = 6000 * 2 * Math.PI/60;
     double motorRadius = 4.25/2.54;
     boolean variableAngle = false;
+
     enum PowerGood{
         yes,
         tooClose,
@@ -144,7 +145,7 @@ public class DecodeTeleop extends LinearOpMode {
             goalDistanceX = blueGoalX - pinpoint.getPosX(DistanceUnit.INCH);
             goalDistanceY = blueGoalY - pinpoint.getPosY(DistanceUnit.INCH);
         }
-        return (Math.sqrt(-1 * gravity * Math.pow(goalDistanceX,2)/(goalDistanceX*Math.sin(2 * angle) - 2*goalDistanceY*Math.pow(Math.cos(angle),2))));
+        return Math.sqrt(Math.pow(goalDistanceX,2) * gravity/(goalDistanceX * Math.sin(2 * angle) - 2 * goalDistanceY * Math.pow(Math.cos(angle),2)));
     }
     public void autoOuttake(double speed){
         powerGood = PowerGood.yes;
@@ -263,7 +264,7 @@ public class DecodeTeleop extends LinearOpMode {
     private void mainLoop() {
         //run functions
         /*if (gamepad2.left_trigger > 0.25 && powerGood == PowerGood.yes){
-            outtakeServo.setPosition(0.88);
+            outtakeServo.setPosition(0.91);
             telemetry.addLine("Shooting");
         }else if (powerGood == PowerGood.tooFar){
             telemetry.addLine("Get closer to the goal.");
@@ -271,15 +272,14 @@ public class DecodeTeleop extends LinearOpMode {
             telemetry.addLine("Get farther from the goal");
         }
         if (gamepad2.left_trigger <= 0.25) {
-            outtakeServo.setPosition(0.98);
-        }*/
+            outtakeServo.setPosition(0.96);
+        }
         telemetry.addData("power: ",power);
         telemetry.addData("speed:", getVelocityShot());
-        autoOuttake(getVelocityShot());
+        autoOuttake(getVelocityShot());*/
         driveCode.runWheels();
         intakeCode.intake();
         outtakeCode.outtake();
-        telemetry.addData("outtakeMotor2", outtakeMotor2.getDirection());
         telemetry.update();
         pinpoint.update();
     }

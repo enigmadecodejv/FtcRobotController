@@ -1,8 +1,5 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.pedropathing.follower.Follower;
-import com.pedropathing.geometry.BezierLine;
-import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -13,7 +10,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.vision.PurpleOrGreen;
 import org.firstinspires.ftc.teamcode.vision.aprilTagProcessor;
-import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor;
 
 @Autonomous(name = "PinpointAuto", group = "enigma")
 public class SammysPinpointAuto extends LinearOpMode {
@@ -21,9 +17,8 @@ public class SammysPinpointAuto extends LinearOpMode {
     aprilTagProcessor AprilTagProcessor;
     targetMoveTest targetMove;
     targetingSystem targeting;
+    distanceOuttake outtakeCode;
     public GoBildaPinpointDriver pinpoint;
-    public double RCCX = 0.42;//robot center correction X
-    public double RCCY = -4.375;//robot center correction Y
     double [] targetsXY;
     double targetX;
     double targetY;
@@ -48,32 +43,26 @@ public class SammysPinpointAuto extends LinearOpMode {
     public DcMotor outtakeMotor;
     public DcMotor outtakeMotor2;
     public Servo outtakeServo;
-    public double artifactMinDisplacement = 16265;
-    double artifactDisplacementX;
-    double artifactDisplacementY;
-    double artifactDisplacementXY;
-    int artifactArrayPos;
     int motifPos = 0;
-    boolean targetChecked = false;
     boolean starting = true;
     boolean dontMove = false;
     boolean isRed;
-    int timesAttempted = 1;
-    double robotSize = 12;
     double [] shotPointsRed = {80,90,125,130};
     double [] shotPointsBlue = {65,90,20,130};
-    double roboLocity;//Make SURE is in inches/second
-    double roboLangle;//Make SURE is in degrees/second
-    double movementProportions;
     PurpleOrGreen [] motif;
     double redGoalX;
     double redGoalY;
     double blueGoalX;
     double blueGoalY;
+    double artifactsInRobot = 3;
+    double [] finalPos;
+    double servoTimer;
+    double servoTimer0;
     public void runOpMode() {
         AprilTagProcessor = new aprilTagProcessor(hardwareMap);
         targetMove = new targetMoveTest(/*hardwareMap*/);//todo fix targetMoveTest to work in another opMode when testing is finished
         targeting = new targetingSystem(/*hardwareMap*/);//todo fix targetingSystem to work in another opMode when testing is finished
+        outtakeCode = new distanceOuttake();
         leftFrontDrive = hardwareMap.get(DcMotor.class, "FrontLeft");
         leftBackDrive = hardwareMap.get(DcMotor.class, "RearLeft");
         rightFrontDrive = hardwareMap.get(DcMotor.class, "FrontRight");
@@ -123,13 +112,23 @@ public class SammysPinpointAuto extends LinearOpMode {
                 }
             }else {
                 double [] RCC = methods.headingChangeRCCXandRCCY(pinpoint.getHeading(AngleUnit.RADIANS));
-                if (pinpoint.getPosX(DistanceUnit.INCH) + RCC[0] == targetX && pinpoint.getPosY(DistanceUnit.INCH) + RCC[1] == targetY && PartsOfAuto == partsOfAuto.move1) {
+                if (PartsOfAuto == partsOfAuto.move2 && pinpoint.getPosX(DistanceUnit.INCH) + RCC[0] == targetX && pinpoint.getPosY(DistanceUnit.INCH) + RCC[1] == targetY) {
                     PartsOfAuto = partsOfAuto.intake;
                     intaking = true;
                     waitForIntake = System.currentTimeMillis();
                 } else if (PartsOfAuto == partsOfAuto.intake && System.currentTimeMillis() > waitForIntake + 300) {
-                    intaking = false;
-                    PartsOfAuto = partsOfAuto.move2;
+                    artifactsInRobot++;
+                    if (artifactsInRobot < 3){
+                        PartsOfAuto = partsOfAuto.move1;
+                    }else {
+                        intaking = false;
+                        PartsOfAuto = partsOfAuto.move2;
+                    }
+                } else if (PartsOfAuto == partsOfAuto.move2 && pinpoint.getPosX(DistanceUnit.INCH) + RCC[0] == targetX && pinpoint.getPosY(DistanceUnit.INCH) + RCC[1] == targetY && targetsXY == finalPos) {
+                    PartsOfAuto = partsOfAuto.outtake;
+                    waitForIntake = System.currentTimeMillis();
+                }else if (PartsOfAuto == partsOfAuto.outtake && artifactsInRobot == 0){
+                    PartsOfAuto = partsOfAuto.move1;
                 }
                 if (intaking) {
                     intake();
@@ -137,12 +136,24 @@ public class SammysPinpointAuto extends LinearOpMode {
                 pinpoint.update();
                 motif = AprilTagProcessor.findmotif();
                 if (aprilTagProcessor.motif[motifPos] != null && PartsOfAuto == partsOfAuto.move1) {
-                    targeting.setArtifactTargets(aprilTagProcessor.motif[motifPos]);
+                    targetsXY = targeting.setArtifactTargets(aprilTagProcessor.motif[motifPos]);
+                    finalPos = targetsXY;
+                    targetX = targetsXY[0];
+                    targetY = targetsXY[1];
                 } else if (PartsOfAuto == partsOfAuto.move2){
+                    double [] point1;
+                    double [] headingChange = methods.headingChangeRCCXandRCCY(pinpoint.getHeading(AngleUnit.RADIANS));
+                    double PosX = pinpoint.getPosX(DistanceUnit.INCH) + headingChange[0];
+                    double PosY = pinpoint.getPosY(DistanceUnit.INCH) + headingChange[1];
                     if (isRed){
+                        point1 = targeting.findClosestShootPoint(new double [] {shotPointsRed[0], shotPointsRed[1]}, new double []{shotPointsRed[2],shotPointsRed[3]}, new double []{shotPointsRed[4],shotPointsRed[5]}, PosX, PosY);
                     }else{
-
+                        point1 = targeting.findClosestShootPoint(new double [] {shotPointsBlue[0], shotPointsBlue[1]}, new double []{shotPointsBlue[2],shotPointsBlue[3]}, new double []{shotPointsBlue[4],shotPointsBlue[5]}, PosX, PosY);
                     }
+                    targetX = point1[0];
+                    targetY = point1[1];
+                    targetsXY = point1;
+                    finalPos = point1;
                 }else if (PartsOfAuto == partsOfAuto.rotate){
                     if (isRed) {
                         targetX = redGoalX;
@@ -155,29 +166,37 @@ public class SammysPinpointAuto extends LinearOpMode {
                     }
                         dontMove = true;
                 }else if (PartsOfAuto == partsOfAuto.outtake){
-                    
+                    if (servoTimer > System.currentTimeMillis() + 100) {
+                        outtakeServo.setPosition(0.88);
+                        artifactsInRobot--;
+                        servoTimer0 = System.currentTimeMillis();
+                    }else if (servoTimer0 > System.currentTimeMillis() + 100){
+                        outtakeServo.setPosition(0.98);
+                        servoTimer = System.currentTimeMillis();
+                        intake();
+                    }
                 }
-                if (targetChecked) {
+                if (targeting.targetChecked) {
                     targetMove.movementMath();
                 } else if (PartsOfAuto == partsOfAuto.move1 || PartsOfAuto == partsOfAuto.move2){
-                    targetsXY = targeting.finalizeTarget(targetX, targetY);
+                    targetsXY = targeting.finalizeTarget(targetX, targetY, pinpoint.getHeading(AngleUnit.RADIANS));
                     targetX = targetsXY[0];
                     targetY = targetsXY[1];
-                    leftFrontDrive.setPower(0);
-                    leftBackDrive.setPower(0);
-                    rightFrontDrive.setPower(0);
-                    rightBackDrive.setPower(0);
                 }
+                double PosX = pinpoint.getPosX(DistanceUnit.INCH) + RCC[0];
+                double PosY = pinpoint.getPosX(DistanceUnit.INCH) + RCC[1];
+                double shootVelocity;
+                if (isRed) {
+                    shootVelocity = outtakeCode.getVelocityShot(new double[]{PosX, PosY}, new double []{redGoalX,redGoalY});
+                }else{
+                    shootVelocity = outtakeCode.getVelocityShot(new double []{PosX,PosY}, new double []{blueGoalX,blueGoalY});
+                }
+                double power = outtakeCode.autoOuttake(shootVelocity);
+                outtakeMotor.setPower(power);
+                outtakeMotor2.setPower(power);
             }
         }
     }
-/*    public double [] findClosestShootPoint(){
-        if (isRed){
-
-        }else{
-
-        }
-    }*/
     public void intake () {
         intake.setPower(1);
     }
