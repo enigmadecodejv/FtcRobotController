@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -42,6 +43,7 @@ public class DecodeTeleop extends LinearOpMode {
     double motorRotSpeed = 6000 * 2 * Math.PI/60;
     double motorRadius = 4.25/2.54;
     boolean variableAngle = false;
+
     enum PowerGood{
         yes,
         tooClose,
@@ -143,7 +145,7 @@ public class DecodeTeleop extends LinearOpMode {
             goalDistanceX = blueGoalX - pinpoint.getPosX(DistanceUnit.INCH);
             goalDistanceY = blueGoalY - pinpoint.getPosY(DistanceUnit.INCH);
         }
-        return (Math.sqrt(-1 * gravity * Math.pow(goalDistanceX,2)/(goalDistanceX*Math.sin(2 * angle) - 2*goalDistanceY*Math.pow(Math.cos(angle),2))));
+        return Math.sqrt(Math.pow(goalDistanceX,2) * gravity/(goalDistanceX * Math.sin(2 * angle) - 2 * goalDistanceY * Math.pow(Math.cos(angle),2)));
     }
     public void autoOuttake(double speed){
         powerGood = PowerGood.yes;
@@ -261,7 +263,7 @@ public class DecodeTeleop extends LinearOpMode {
 */
     private void mainLoop() {
         //run functions
-        if (gamepad2.left_trigger > 0.25 && powerGood == PowerGood.yes){
+        /*if (gamepad2.left_trigger > 0.25 && powerGood == PowerGood.yes){
             outtakeServo.setPosition(0.91);
             telemetry.addLine("Shooting");
         }else if (powerGood == PowerGood.tooFar){
@@ -274,10 +276,10 @@ public class DecodeTeleop extends LinearOpMode {
         }
         telemetry.addData("power: ",power);
         telemetry.addData("speed:", getVelocityShot());
-        autoOuttake(getVelocityShot());
+        autoOuttake(getVelocityShot());*/
         driveCode.runWheels();
         intakeCode.intake();
-        //outtakeCode.outtake();
+        outtakeCode.outtake();
         telemetry.update();
         pinpoint.update();
     }
