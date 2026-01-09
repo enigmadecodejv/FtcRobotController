@@ -1,5 +1,8 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierLine;
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -168,13 +171,13 @@ public class SammysPinpointAuto extends LinearOpMode {
             }
         }
     }
-    public double [] findClosestShootPoint(){
+/*    public double [] findClosestShootPoint(){
         if (isRed){
 
         }else{
 
         }
-    }
+    }*/
     public void intake () {
         intake.setPower(1);
     }

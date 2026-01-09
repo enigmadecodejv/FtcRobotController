@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
@@ -261,8 +262,8 @@ public class DecodeTeleop extends LinearOpMode {
 */
     private void mainLoop() {
         //run functions
-        if (gamepad2.left_trigger > 0.25 && powerGood == PowerGood.yes){
-            outtakeServo.setPosition(0.91);
+        /*if (gamepad2.left_trigger > 0.25 && powerGood == PowerGood.yes){
+            outtakeServo.setPosition(0.88);
             telemetry.addLine("Shooting");
         }else if (powerGood == PowerGood.tooFar){
             telemetry.addLine("Get closer to the goal.");
@@ -270,14 +271,15 @@ public class DecodeTeleop extends LinearOpMode {
             telemetry.addLine("Get farther from the goal");
         }
         if (gamepad2.left_trigger <= 0.25) {
-            outtakeServo.setPosition(0.96);
-        }
+            outtakeServo.setPosition(0.98);
+        }*/
         telemetry.addData("power: ",power);
         telemetry.addData("speed:", getVelocityShot());
         autoOuttake(getVelocityShot());
         driveCode.runWheels();
         intakeCode.intake();
-        //outtakeCode.outtake();
+        outtakeCode.outtake();
+        telemetry.addData("outtakeMotor2", outtakeMotor2.getDirection());
         telemetry.update();
         pinpoint.update();
     }
