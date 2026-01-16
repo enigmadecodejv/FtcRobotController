@@ -1,20 +1,31 @@
 package org.firstinspires.ftc.teamcode;
 
+import static org.firstinspires.ftc.teamcode.pedroPathing.Tuning.drawOnlyCurrent;
+import static org.firstinspires.ftc.teamcode.pedroPathing.Tuning.follower;
+
+import com.pedropathing.follower.Follower;
+import com.pedropathing.geometry.BezierLine;
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.pedropathing.paths.Path;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import org.firstinspires.ftc.teamcode.vision.PurpleOrGreen;
 
+import java.lang.annotation.Target;
 import java.util.Arrays;
 
 @Autonomous(name = "targetingSystem", group = "enigma")
 public class targetingSystem extends LinearOpMode {
     public generalMethodsAuto methods = new generalMethodsAuto();
-    public targetMoveTest targetMove;
-    public GoBildaPinpointDriver pinpoint;
+    public Constants Constants = new Constants();
+    public Pose Position;
+    public Path forwards;
+    private Follower robot;
     public DcMotor leftFrontDrive;
     public DcMotor leftBackDrive;
     public DcMotor rightFrontDrive;
@@ -74,11 +85,11 @@ public class targetingSystem extends LinearOpMode {
     double [] shotPointsBlue = {65,90,20,130,62,10};
     public boolean isRed = true;
     public double [] setArtifactTargets(PurpleOrGreen color){
-        headingChange = methods.headingChangeRCCXandRCCY(pinpoint.getHeading(AngleUnit.RADIANS));
+        headingChange = methods.headingChangeRCCXandRCCY(robot.getHeading());
         for (int i = 0; i < artifactArray.length - 1; i++){
             if (artifactArray[i].purpleOrGreen == color){
-                artifactDisplacementX = artifactArray[i].x - pinpoint.getPosX(DistanceUnit.INCH) + headingChange[0];
-                artifactDisplacementY = artifactArray[i].y - pinpoint.getPosY(DistanceUnit.INCH) + headingChange[1];
+                artifactDisplacementX = artifactArray[i].x - robot.getPose().getX() + headingChange[0];
+                artifactDisplacementY = artifactArray[i].y - robot.getPose().getY() + headingChange[1];
                 artifactDisplacementXY = Math.sqrt(Math.pow(artifactDisplacementX,2) + Math.pow(artifactDisplacementY,2));
                 if (artifactDisplacementXY < artifactMinDisplacement) {
                     artifactMinDisplacement = artifactDisplacementXY;
@@ -90,10 +101,10 @@ public class targetingSystem extends LinearOpMode {
         return new double [] {artifactArray[artifactArrayPos].x, artifactArray[artifactArrayPos].y};
     }
     public int checkIntersection(double targetX, double targetY){
-        headingChange = methods.headingChangeRCCXandRCCY(pinpoint.getHeading(AngleUnit.RADIANS));
+        headingChange = methods.headingChangeRCCXandRCCY(robot.getHeading());
         //returns the position in artifactArray of the first artifact (in artifactArray) the line segment from robot to target intersects with
-        double slope = (targetX - pinpoint.getPosX(DistanceUnit.INCH) - headingChange[0])/(targetY - pinpoint.getPosY(DistanceUnit.INCH) - headingChange[1]);
-        double linePosY = pinpoint.getPosY(DistanceUnit.INCH) + headingChange[0] - (slope * (pinpoint.getPosX(DistanceUnit.INCH) + headingChange[0]));
+        double slope = (targetX - robot.getPose().getX() - headingChange[0])/(targetY - robot.getPose().getY() - headingChange[1]);
+        double linePosY = robot.getPose().getY() + headingChange[0] - (slope * (robot.getPose().getX() + headingChange[0]));
         double[] intersectionX;
         double coeffXpwr2;
         double coeffXpwr1;
@@ -105,10 +116,10 @@ public class targetingSystem extends LinearOpMode {
             coeffXpwr1 = 2*((slope*(linePosY - artifactArray[j].y)) - artifactArray[j].x);
             coeffXpwr0 = Math.pow(linePosY - artifactArray[j].y,2) - Math.pow(artifactArray[j].radius,2);
             intersectionX = new double[]{(-coeffXpwr1 + Math.sqrt(Math.pow(coeffXpwr1, 2) - 4 * coeffXpwr2 * coeffXpwr0)) / (2 * coeffXpwr2), (-coeffXpwr1 - Math.sqrt(Math.pow(coeffXpwr1, 2) - 4 * coeffXpwr2 * coeffXpwr0)) / (2 * coeffXpwr2)};
-            if (targetX > pinpoint.getPosX(DistanceUnit.INCH) + headingChange[0]){
-                interval = new double[] {pinpoint.getPosX(DistanceUnit.INCH) + headingChange[0], targetX};
-            }else if (artifactArray[j].x < pinpoint.getPosX(DistanceUnit.INCH) + headingChange[0]){
-                interval = new double[] {targetX, pinpoint.getPosX(DistanceUnit.INCH) + headingChange[0]};
+            if (targetX > robot.getPose().getX() + headingChange[0]){
+                interval = new double[] {robot.getPose().getX() + headingChange[0], targetX};
+            }else if (artifactArray[j].x < robot.getPose().getX() + headingChange[0]){
+                interval = new double[] {targetX, robot.getPose().getX() + headingChange[0]};
             }else{
                 interval = new double[]{0,0};
             }
@@ -148,13 +159,13 @@ public class targetingSystem extends LinearOpMode {
         int intersect = checkIntersection(targetX,targetY);
         if (intersect != 16265){
             if (timesAttempted%2 != 0){
-                if (targetX - pinpoint.getPosX(DistanceUnit.INCH) - headingChange[0] > targetY - pinpoint.getPosY(DistanceUnit.INCH) - headingChange[1]){
+                if (targetX - robot.getPose().getX() - headingChange[0] > targetY - robot.getPose().getY() - headingChange[1]){
                     newTarget = new double [] {artifactArray[intersect].x,artifactArray[intersect].y + (artifactArray[intersect].radius + robotSize)*(Math.floor(timesAttempted/2)+1)};
                 }else{
                     newTarget = new double [] {artifactArray[intersect].x + (artifactArray[intersect].radius + robotSize)*(Math.floor(timesAttempted/2)+1), artifactArray[intersect].y};
                 }
             }else{
-                if (targetX - pinpoint.getPosX(DistanceUnit.INCH) - headingChange[0] > targetY - pinpoint.getPosY(DistanceUnit.INCH) - headingChange[1]){
+                if (targetX - robot.getPose().getX() - headingChange[0] > targetY - robot.getPose().getY() - headingChange[1]){
                     newTarget = new double [] {artifactArray[intersect].x,artifactArray[intersect].y - (artifactArray[intersect].radius + robotSize)*(Math.floor(timesAttempted/2)+1)};
                 }else{
                     newTarget = new double [] {artifactArray[intersect].x - (artifactArray[intersect].radius + robotSize)*(Math.floor(timesAttempted/2)+1), artifactArray[intersect].y};
@@ -170,7 +181,6 @@ public class targetingSystem extends LinearOpMode {
         return newTarget;
     }
     public void runOpMode (){
-        targetMove = new targetMoveTest(/*hardwareMap*/); //todo fix targetMoveTest to work in another opMode when testing is finished
         leftFrontDrive = hardwareMap.get(DcMotor.class, "FrontLeft");
         leftBackDrive = hardwareMap.get(DcMotor.class, "RearLeft");
         rightFrontDrive = hardwareMap.get(DcMotor.class, "FrontRight");
@@ -180,13 +190,22 @@ public class targetingSystem extends LinearOpMode {
         leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
         rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
+
+        robot = Constants.createFollower(hardwareMap);
+        robot.setStartingPose(new Pose(72, 8, Math.toRadians(90)));
+        waitForStart();
         while (opModeIsActive()){
+
+            forwards = new Path(new BezierLine(robot.getPose(), new Pose(72, 72, 0)));
+            //forwards.setConstantHeadingInterpolation(0.8);
+            robot.followPath(forwards, true);
+            /*
             if (!targetsSet){
                 if (reachedArtifact){
                     double [] point1;
-                    double [] headingChange = methods.headingChangeRCCXandRCCY(pinpoint.getHeading(AngleUnit.RADIANS));
-                    double PosX = pinpoint.getPosX(DistanceUnit.INCH) + headingChange[0];
-                    double PosY = pinpoint.getPosY(DistanceUnit.INCH) + headingChange[1];
+                    double [] headingChange = methods.headingChangeRCCXandRCCY(robot.getHeading());
+                    double PosX = robot.getPose().getX() + headingChange[0];
+                    double PosY = robot.getPose().getY() + headingChange[1];
                     if (isRed){
                         point1 = findClosestShootPoint(new double [] {shotPointsRed[0], shotPointsRed[1]}, new double []{shotPointsRed[2],shotPointsRed[3]}, new double []{shotPointsRed[4],shotPointsRed[5]}, PosX, PosY);
                     }else{
@@ -202,9 +221,14 @@ public class targetingSystem extends LinearOpMode {
                 targetsSet = true;
             }
             if (targetChecked) {
-                targetMove.movementMath();
+                forwards = new Path(new BezierLine(robot.getPose(), new Pose(targetX, targetY)));
+                forwards.setConstantHeadingInterpolation(0);
+                telemetry.addData("pos", robot.getPose());
+                telemetry.addData("targetposx", targetX);
+                telemetry.addData("targetposy", targetY);
+                robot.followPath(forwards);
             } else {
-                targetsXY = finalizeTarget(targetX, targetY, pinpoint.getHeading(AngleUnit.RADIANS));
+                targetsXY = finalizeTarget(targetX, targetY, robot.getHeading());
                 targetX = targetsXY[0];
                 targetY = targetsXY[1];
                 leftFrontDrive.setPower(0);
@@ -212,7 +236,7 @@ public class targetingSystem extends LinearOpMode {
                 rightFrontDrive.setPower(0);
                 rightBackDrive.setPower(0);
             }
-            if (pinpoint.getPosX(DistanceUnit.INCH) == targetX && pinpoint.getPosY(DistanceUnit.INCH) == targetY){
+            if (Math.abs(robot.getPose().getX() - targetX) <= 1 && Math.abs(robot.getPose().getY() - targetY) <= 1){
                 targetsSet = false;
                 double slope;
                 double offset;
@@ -239,9 +263,11 @@ public class targetingSystem extends LinearOpMode {
                         break;
                     }
                 }
-            }
-            pinpoint.update();
+            }*/
+            //telemetry.addData("targetChecked", targetChecked);
             telemetry.update();
+            robot.update();
+            sleep(500000000);
         }
     }
 }

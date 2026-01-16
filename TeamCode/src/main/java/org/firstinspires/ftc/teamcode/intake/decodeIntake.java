@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.intake;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -14,6 +15,7 @@ public class decodeIntake {
         this.gamepad1 = gamepad1;
         this.hardwareMap = hardwareMap;
         intake = hardwareMap.get(DcMotor.class, "Intake");
+        intake.setDirection(DcMotor.Direction.REVERSE);
     }
     public void intake (){
         if (movingForward){
