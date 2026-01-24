@@ -10,6 +10,8 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.pedropathing.paths.Path;
+import com.pedropathing.paths.PathChain;
+
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -23,9 +25,11 @@ import java.util.Arrays;
 public class targetingSystem extends LinearOpMode {
     public generalMethodsAuto methods = new generalMethodsAuto();
     public Constants Constants = new Constants();
-    public Pose Position;
-    public Path forwards;
+    public PathChain forwards;
     private Follower robot;
+    public Pose Position = new Pose(72, 72, 0);
+    public Pose StartPos = new Pose(72, 8, Math.toRadians(90));
+
     public DcMotor leftFrontDrive;
     public DcMotor leftBackDrive;
     public DcMotor rightFrontDrive;
@@ -192,13 +196,18 @@ public class targetingSystem extends LinearOpMode {
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
 
         robot = Constants.createFollower(hardwareMap);
-        robot.setStartingPose(new Pose(72, 8, Math.toRadians(90)));
+        robot.setPose(StartPos);
+        forwards = robot.pathBuilder()
+                .addPath(new BezierLine(StartPos, Position))
+                .setLinearHeadingInterpolation(StartPos.getHeading(), Position.getHeading())
+                .build();
         waitForStart();
+        robot.activateAllPIDFs();
         while (opModeIsActive()){
+            if (!robot.isBusy()) {
+                robot.followPath(forwards, true);
+            }
 
-            forwards = new Path(new BezierLine(robot.getPose(), new Pose(72, 72, 0)));
-            //forwards.setConstantHeadingInterpolation(0.8);
-            robot.followPath(forwards, true);
             /*
             if (!targetsSet){
                 if (reachedArtifact){
@@ -267,7 +276,6 @@ public class targetingSystem extends LinearOpMode {
             //telemetry.addData("targetChecked", targetChecked);
             telemetry.update();
             robot.update();
-            sleep(500000000);
         }
     }
 }
