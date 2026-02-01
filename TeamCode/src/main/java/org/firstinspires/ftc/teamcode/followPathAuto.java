@@ -3,6 +3,8 @@ package org.firstinspires.ftc.teamcode;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
+import com.pedropathing.paths.Path;
+import com.pedropathing.paths.PathBuilder;
 import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -27,7 +29,7 @@ public class followPathAuto extends LinearOpMode {
     public double timer2;
     public boolean timerSet = true;
     public Pose[] positionsBlueFar = {new Pose(59,16, Math.toRadians(113)), new Pose(36.5,35.5, Math.toRadians(180)), new Pose(7,35.5,Math.toRadians(315)), new Pose(62,8, Math.toRadians(111)), new Pose(36.5,60, Math.toRadians(180)), new Pose(14,60, Math.toRadians(300)), new Pose(62,8,Math.toRadians(111))};
-    public Pose[] positionsRedFar = {new Pose(85, 16, Math.toRadians(68))/*, new Pose(105, 35, 0), new Pose(96, 34, 0), new Pose(131, 35, 0), new Pose(80, 16, Math.toRadians(66)), new Pose(96, 59, 0), new Pose(96, 60, 0), new Pose(80, 16, Math.toRadians(66))*/};
+    public Pose[] positionsRedFar = {new Pose(80, 16, Math.toRadians(66)), new Pose(105, 35, 0), new Pose(131, 35, 0), new Pose(80, 16, Math.toRadians(66)), new Pose(130, 60, 0), new Pose(80, 16, Math.toRadians(66))};
     public Pose[] positionsBlueNear = {new Pose(59, 85, Math.toRadians(138))};
     public Pose[] positionsRedNear = {new Pose(85, 85, Math.toRadians(48))};
     private Follower robot;
@@ -35,6 +37,7 @@ public class followPathAuto extends LinearOpMode {
     public int posIndex = 0;
     public boolean ResetShoot = false;
     private PathChain forwards;
+    public Path scorePreload = null;
     public Pose robotPos = null;
     enum PartsOfAuto {
         move,
@@ -42,9 +45,10 @@ public class followPathAuto extends LinearOpMode {
         shoot
     }
     PartsOfAuto partsOfAuto = PartsOfAuto.shoot;
+    public Pose lastPose;
     public int numberOfArtifacts = 2;
     public void intake (){
-        intakeMotor.setPower(-0.8);
+        intakeMotor.setPower(-0.9);
     }
     public void turnOffIntake () {
         intakeMotor.setPower(0);
@@ -54,7 +58,7 @@ public class followPathAuto extends LinearOpMode {
         sleep(250);
         while (numberOfArtifacts > 0 && opModeIsActive()) {
             outtakeServo.setPosition(0.68);
-            sleep(250);
+            sleep(1000);
             outtakeServo.setPosition(1);
             sleep(250);
             intake();
@@ -95,23 +99,24 @@ public class followPathAuto extends LinearOpMode {
         telemetry.addLine("looking for starting pos press a for nearside, b for farside");
         if (color.equals("blue")) {
             if (gamepad1.b) {
-                robotPos = new Pose(56, 8, 90);
+                robotPos = new Pose(56, 8, Math.toRadians(90));
                 isFar = true;
             } else if (gamepad1.a) {
-                robotPos = new Pose(39, 136, 270);
+                robotPos = new Pose(39, 136, Math.toRadians(270));
                 isFar = false;
             }
         } else if (color.equals("red")) {
             if (gamepad1.b) {
-                robotPos = new Pose(88, 8, 90);
+                robotPos = new Pose(85, 8.75, Math.toRadians(90));
                 isFar = true;
             } else if (gamepad1.a) {
-                robotPos = new Pose(104, 136, 270);
+                robotPos = new Pose(104, 136, Math.toRadians(270));
                 isFar = false;
             }
         }
         if (robotPos != null) {
             robot.setPose(robotPos);
+            lastPose = robotPos;
             robot.update();
             isStartSet = true;
         }
@@ -123,15 +128,16 @@ public class followPathAuto extends LinearOpMode {
     }
     public void goToPos (Pose endPose) {
         forwards = robot.pathBuilder()
-                .addPath(new BezierLine(robot.getPose(), endPose))
-                .setLinearHeadingInterpolation(robot.getHeading(), endPose.getHeading())
+                .addPath(new BezierLine(lastPose, endPose))
+                .setLinearHeadingInterpolation(lastPose.getHeading(), endPose.getHeading())
                 .build();
         robot.followPath(forwards, true);
         robot.update();
         while (robot.isBusy() && opModeIsActive()) {
-            sleep(10);
+            //sleep(100);
             robot.update();
         }
+        lastPose = endPose;
     }
     public Pose getNextPose () {
         Pose p;
@@ -176,6 +182,7 @@ public class followPathAuto extends LinearOpMode {
         outtakeMotor = hardwareMap.get(DcMotor.class, "ShooterRight");
         outtakeMotor2 = hardwareMap.get(DcMotor.class, "ShooterLeft");
         outtakeServo = hardwareMap.get(Servo.class, "Feeder");
+        outtakeMotor2.setDirection(DcMotor.Direction.REVERSE);
 
         while (!opModeIsActive()) {
             redOrBlue();
@@ -189,7 +196,37 @@ public class followPathAuto extends LinearOpMode {
         waitForStart();
         Pose l;
         while (opModeIsActive()) {
+            /*if (isFar) {
+                outtakeMotor.setPower(-0.75);
+                outtakeMotor2.setPower(-0.75);
+            } else {
+                outtakeMotor.setPower(-0.6);
+                outtakeMotor2.setPower(-0.6);
+            }
+            sleep(1000);*/
             telemetry.addData("start pos", robot.getPose());
+            goToPos(new Pose(85, 19, Math.toRadians(57)));
+            telemetry.addData("pos", robot.getPose());
+            telemetry.update();
+            sleep(3000);
+            outtake();
+            goToPos(new Pose(100, 35, 0));
+            telemetry.addData("pos", robot.getPose());
+            telemetry.update();
+            sleep(3000);
+            intake();
+            goToPos(new Pose(110, 35, 0));
+            telemetry.addData("pos", robot.getPose());
+            telemetry.update();
+            sleep(3000);
+            turnOffIntake();
+            numberOfArtifacts = 2;
+            goToPos(new Pose(85, 19, Math.toRadians(57)));
+            telemetry.addData("pos", robot.getPose());
+            telemetry.update();
+            sleep(3000);
+            outtake();
+            break;
             //set power baced off of distance
             //goto shoot pos
             //shoot *2
@@ -198,7 +235,7 @@ public class followPathAuto extends LinearOpMode {
             //shoot *2
             //goto next balls
             //loop
-            if (isFar) {
+            /*if (isFar) {
                 outtakeMotor.setPower(-0.65);
                 outtakeMotor2.setPower(-0.65);
             } else {
@@ -221,10 +258,7 @@ public class followPathAuto extends LinearOpMode {
                 telemetry.addData("p", l);
                 outtake();
                 partsOfAuto = PartsOfAuto.move;
-            }
-            robot.update();
-            tickNum++;
-            telemetry.update();
+            }*/
         }
     }
 }
