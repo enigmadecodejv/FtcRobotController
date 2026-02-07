@@ -1,5 +1,8 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.bylazar.configurables.annotations.Configurable;
+import com.bylazar.telemetry.PanelsTelemetry;
+import com.bylazar.telemetry.TelemetryManager;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -14,7 +17,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.Drive.decodeDriveCode;
 import org.firstinspires.ftc.teamcode.Outtake.decodeOuttake;
 import org.firstinspires.ftc.teamcode.intake.decodeIntake;
-
+@Configurable
 @TeleOp(name="DecodeTeleop", group="Enigma")
 public class DecodeTeleop extends LinearOpMode {
     public GoBildaPinpointDriver pinpoint;
@@ -43,6 +46,9 @@ public class DecodeTeleop extends LinearOpMode {
     double motorRotSpeed = 6000 * 2 * Math.PI/60;
     double motorRadius = 4.25/2.54;
     boolean variableAngle = false;
+    public double outtakeVelocity;
+    public double outputPID;
+    private TelemetryManager manager;
 
     enum PowerGood{
         yes,
@@ -279,13 +285,21 @@ public class DecodeTeleop extends LinearOpMode {
         autoOuttake(getVelocityShot());*/
         driveCode.runWheels();
         intakeCode.intake();
-        outtakeCode.outtake();
+        outtakeCode.runUsingPID();
+        outtakeVelocity = outtakeCode.outtakeVelocity();
+        outputPID = outtakeCode.outtakePID(-1400);
+        telemetry.addData("Motor Velocity: ", outtakeVelocity);
+        telemetry.addData("PID output: ", outtakeCode.outtakeVelocity());
+        manager.addData("MotorVelocity", outtakeVelocity);
+        manager.addData("outputPID", outtakeCode.outtakeVelocity());
+        manager.update();
         telemetry.update();
         pinpoint.update();
     }
     void initialize() {
         //hardware
-        //pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");\
+        //pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");
+        manager = PanelsTelemetry.INSTANCE.getTelemetry();
         driveCode = new decodeDriveCode(gamepad1, hardwareMap);
         intakeCode = new decodeIntake(hardwareMap, gamepad1);
         outtakeCode = new decodeOuttake(hardwareMap, gamepad1);
