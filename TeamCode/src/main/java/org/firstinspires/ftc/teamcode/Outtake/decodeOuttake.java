@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode.Outtake;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+//import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -22,7 +23,6 @@ public class decodeOuttake {
         this.hardwareMap = hardwareMap;
         outtakeMotor = hardwareMap.get(DcMotor.class, "ShooterRight");
         outtakeMotor2 = hardwareMap.get(DcMotor.class, "ShooterLeft");
-        //outtakeMotor2.setDirection(DcMotor.Direction.REVERSE);
         outtakeServo = hardwareMap.get(Servo.class, "Feeder");
         currentGamepad1 = gamepad1;
     }
