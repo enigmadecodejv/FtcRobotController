@@ -115,8 +115,8 @@ public class followPathAuto extends LinearOpMode {
             }
         }
         if (robotPos != null) {
-            robot.setPose(robotPos);
-            lastPose = robotPos;
+            robot.setStartingPose(new Pose(72, 72, 90));
+            lastPose = new Pose(72, 72, 90);
             robot.update();
             isStartSet = true;
         }
@@ -205,27 +205,25 @@ public class followPathAuto extends LinearOpMode {
             }
             sleep(1000);*/
             telemetry.addData("start pos", robot.getPose());
-            goToPos(new Pose(85, 19, Math.toRadians(57)));
             telemetry.addData("pos", robot.getPose());
+            robot.update();
             telemetry.update();
             sleep(3000);
-            outtake();
-            goToPos(new Pose(100, 35, 0));
+            goToPos(new Pose(121, 23, Math.toRadians(90)));
+            //outtake();
+            goToPos(new Pose(24, 23, Math.toRadians(90)));
             telemetry.addData("pos", robot.getPose());
             telemetry.update();
-            sleep(3000);
-            intake();
-            goToPos(new Pose(110, 35, 0));
+            //intake();
+            goToPos(new Pose(24, 120, Math.toRadians(90)));
             telemetry.addData("pos", robot.getPose());
             telemetry.update();
-            sleep(3000);
-            turnOffIntake();
+            //turnOffIntake();
             numberOfArtifacts = 2;
-            goToPos(new Pose(85, 19, Math.toRadians(57)));
+            goToPos(new Pose(120, 120, Math.toRadians(90)));
             telemetry.addData("pos", robot.getPose());
             telemetry.update();
-            sleep(3000);
-            outtake();
+            //outtake();
             break;
             //set power baced off of distance
             //goto shoot pos

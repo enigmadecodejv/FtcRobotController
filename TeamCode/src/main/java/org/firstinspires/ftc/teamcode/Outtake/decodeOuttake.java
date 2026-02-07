@@ -54,14 +54,14 @@ public class decodeOuttake {
             outtakeMotor.setPower(0);
             outtakeMotor2.setPower(0);
         }else if (!shouldTheOutakeMotorsBeOnHighPower && lowPower) {
-            outtakeMotor.setPower(-0.55);
-            outtakeMotor2.setPower(-0.55);
+            outtakeMotor.setPower(-0.6);
+            outtakeMotor2.setPower(-0.6);
         } else if (!shouldTheOutakeMotorsBeOnHighPower) {
             outtakeMotor.setPower(-0.6);
             outtakeMotor2.setPower(-0.6);
         } else {
-            outtakeMotor.setPower(-0.65);
-            outtakeMotor2.setPower(-0.65);
+            outtakeMotor.setPower(-0.75);
+            outtakeMotor2.setPower(-0.75);
         }
     }
 }

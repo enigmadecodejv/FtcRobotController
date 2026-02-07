@@ -26,7 +26,7 @@ public class decodeIntake {
         if (gamepad1.right_bumper){
             intake.setPower(intakePower);
         }else if (gamepad1.right_trigger > 0.25){
-            intake.setPower((-1) * intakePower);
+            intake.setPower((-0.3) * intakePower);
         }else {
             intake.setPower(0);
         }
