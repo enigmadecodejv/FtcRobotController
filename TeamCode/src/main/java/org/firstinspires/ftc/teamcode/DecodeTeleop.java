@@ -24,7 +24,7 @@ public class DecodeTeleop extends LinearOpMode {
     decodeDriveCode driveCode;
     decodeIntake intakeCode;
     decodeOuttake outtakeCode;
-    DcMotor outtakeMotor;
+    DcMotorEx outtakeMotor;
     DcMotor outtakeMotor2;
     Servo outtakeServo;
 
@@ -286,12 +286,17 @@ public class DecodeTeleop extends LinearOpMode {
         driveCode.runWheels();
         intakeCode.intake();
         outtakeCode.runUsingPID();
-        outtakeVelocity = outtakeCode.outtakeVelocity();
-        outputPID = outtakeCode.outtakePID(-1400);
+        outtakeVelocity = outtakeMotor.getVelocity();
         telemetry.addData("Motor Velocity: ", outtakeVelocity);
-        telemetry.addData("PID output: ", outtakeCode.outtakeVelocity());
         manager.addData("MotorVelocity", outtakeVelocity);
-        manager.addData("outputPID", outtakeCode.outtakeVelocity());
+        manager.addData("Integral", outtakeCode.integral);
+        manager.addData("Integral2", outtakeCode.integral2);
+        manager.addData("error", outtakeCode.error);
+        if (decodeOuttake.ti == 0){
+            manager.addData("Integral/ti", 0);
+        }else {
+            manager.addData("Integral/ti", outtakeCode.integral/decodeOuttake.ti);
+        }
         manager.update();
         telemetry.update();
         pinpoint.update();
@@ -313,7 +318,7 @@ public class DecodeTeleop extends LinearOpMode {
     @Override
     public void runOpMode() {
         initialize();
-        outtakeMotor = hardwareMap.get(DcMotor.class, "ShooterRight");
+        outtakeMotor = hardwareMap.get(DcMotorEx.class, "ShooterRight");
         outtakeMotor2 = hardwareMap.get(DcMotor.class, "ShooterLeft");
         outtakeMotor2.setDirection(DcMotor.Direction.REVERSE);
         outtakeServo = hardwareMap.get(Servo.class, "Feeder");

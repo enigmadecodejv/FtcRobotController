@@ -23,11 +23,14 @@ public class decodeOuttake {
     public double motorSpeed;
     public double error;
     public double timer;
-    public double initialError = 33778;
-    public static double kp = 30;
+    public double lastError = 33778;
+    public static double kp = 0.01;
     public static double ti = 960;
     public static double td = 0;
-    public double speedPID = -1400;
+    public double integral2 = 0;
+    public static double farSpeed = -1750;
+    public static double closeSpeed = -1300;
+    public double speedPID = closeSpeed;
 
     public decodeOuttake(HardwareMap hardwareMap, Gamepad gamepad1) {
         this.gamepad1 = gamepad1;
@@ -40,25 +43,31 @@ public class decodeOuttake {
     }
     public double outtakePID(double targetSpeed){
         error = targetSpeed - outtakeMotor.getVelocity();
-        if (initialError == 33778){
-            initialError = error;
-        }
         integral += error;
+        integral2 += error;
         timer += 1;
-        derivative = (error - initialError)/timer;
-        return kp*(error + integral/ti + td*derivative)*0.6/1400;
+        if (lastError != 33778) {
+            derivative = (error - lastError) / timer;
+        }
+        lastError = error;
+        if (ti == 0){
+            return kp*(error + td*derivative);
+        }
+        return kp*(error + integral/ti + td*derivative);
     }
     public void runUsingPID(){
         if (currentGamepad1.a){
-            speedPID = -1400;
+            speedPID = closeSpeed;
         }else if (currentGamepad1.y){
-            speedPID = -1750;
+            speedPID = farSpeed;
         }else if (currentGamepad1.dpad_down || currentGamepad1.dpad_left || currentGamepad1.dpad_up || currentGamepad1.dpad_right){
             speedPID = 0;
         }
         double targetPower = outtakePID(speedPID);
         if(targetPower > 1){
             targetPower = 1;
+        }else if (targetPower < -1){
+            targetPower = -1;
         }
         outtakeMotor.setPower(targetPower);
         outtakeMotor2.setPower(targetPower);
@@ -67,9 +76,6 @@ public class decodeOuttake {
         } else {
             outtakeServo.setPosition(1);
         }
-    }
-    public double outtakeVelocity(){
-        return outtakeMotor.getVelocity();
     }
     public void outtake() {
         pastGamepad1 = currentGamepad1;
