@@ -27,7 +27,7 @@ public class followPathAuto extends LinearOpMode {
     public double timer2;
     public boolean timerSet = true;
     public Pose[] positionsBlueFar = {new Pose(59,16, Math.toRadians(113)), new Pose(36.5,35.5, Math.toRadians(180)), new Pose(7,35.5,Math.toRadians(315)), new Pose(62,8, Math.toRadians(111)), new Pose(36.5,60, Math.toRadians(180)), new Pose(14,60, Math.toRadians(300)), new Pose(62,8,Math.toRadians(111))};
-    public Pose[] positionsRedFar = {new Pose(85, 16, Math.toRadians(68))/*, new Pose(105, 35, 0), new Pose(96, 34, 0), new Pose(131, 35, 0), new Pose(80, 16, Math.toRadians(66)), new Pose(96, 59, 0), new Pose(96, 60, 0), new Pose(80, 16, Math.toRadians(66))*/};
+    public Pose[] positionsRedFar = {new Pose(85, 16, Math.toRadians(68)), new Pose(105, 35, 0), new Pose(96, 34, 0), new Pose(131, 35, 0), new Pose(80, 16, Math.toRadians(66)), new Pose(96, 59, 0), new Pose(96, 60, 0), new Pose(80, 16, Math.toRadians(66))};
     public Pose[] positionsBlueNear = {new Pose(59, 85, Math.toRadians(138))};
     public Pose[] positionsRedNear = {new Pose(85, 85, Math.toRadians(48))};
     private Follower robot;

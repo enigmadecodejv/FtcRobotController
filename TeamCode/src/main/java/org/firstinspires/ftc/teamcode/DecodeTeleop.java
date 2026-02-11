@@ -49,7 +49,6 @@ public class DecodeTeleop extends LinearOpMode {
     public double outtakeVelocity;
     public double outputPID;
     private TelemetryManager manager;
-
     enum PowerGood{
         yes,
         tooClose,
