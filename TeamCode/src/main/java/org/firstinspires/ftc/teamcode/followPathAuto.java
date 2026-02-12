@@ -9,10 +9,12 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.Outtake.decodeOuttake;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Autonomous(name="FollowPathAuto", group="Enigma")
 public class followPathAuto extends LinearOpMode {
+    decodeOuttake outtakeCode;
     DcMotor intakeMotor;
     public int tickNum = 0;
     public boolean isFar;
@@ -53,6 +55,7 @@ public class followPathAuto extends LinearOpMode {
         outtakeServo.setPosition(1);
         sleep(250);
         while (numberOfArtifacts > 0 && opModeIsActive()) {
+            outtakeCode.runUsingPID();
             outtakeServo.setPosition(0.68);
             sleep(250);
             outtakeServo.setPosition(1);
@@ -176,6 +179,7 @@ public class followPathAuto extends LinearOpMode {
         outtakeMotor = hardwareMap.get(DcMotor.class, "ShooterRight");
         outtakeMotor2 = hardwareMap.get(DcMotor.class, "ShooterLeft");
         outtakeServo = hardwareMap.get(Servo.class, "Feeder");
+        outtakeCode = new decodeOuttake(hardwareMap, gamepad1);
 
         while (!opModeIsActive()) {
             redOrBlue();
@@ -199,11 +203,9 @@ public class followPathAuto extends LinearOpMode {
             //goto next balls
             //loop
             if (isFar) {
-                outtakeMotor.setPower(-0.65);
-                outtakeMotor2.setPower(-0.65);
+                outtakeCode.speedPID = decodeOuttake.farSpeed;
             } else {
-                outtakeMotor.setPower(-0.6);
-                outtakeMotor2.setPower(-0.6);
+                outtakeCode.speedPID = decodeOuttake.closeSpeed;
             }
             if (!robot.isBusy() && partsOfAuto == PartsOfAuto.move) {
                 goToNextPose();

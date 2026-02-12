@@ -1,20 +1,22 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.pedropathing.geometry.Pose;
+import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-
+@Autonomous(group = "enigma", name = "moveTest2")
 public class TargetMoving2 extends LinearOpMode {
     public DcMotor leftFrontDrive;
     public DcMotor leftBackDrive;
     public DcMotor rightFrontDrive;
     public DcMotor rightBackDrive;
     public GoBildaPinpointDriver pinpoint;
-    public double targetX = 0;
-    public double targetY = 0;
-    public double targetAngle;
+    public double targetX = 30;
+    public double targetY = 30;
+    public double targetAngle = Math.PI;
     public boolean reachedPos = false;
     public double finalAngle;
     public double rawAngle;
@@ -37,14 +39,14 @@ public class TargetMoving2 extends LinearOpMode {
         displaceY = targetY - PosY;
         rawAngle = Math.atan(displaceY/displaceX);
         if (displaceX < 0){
-            finalAngle += Math.PI;
+            finalAngle = rawAngle + Math.PI;
         }else{
             finalAngle = rawAngle;
         }
         if (roboAngle != finalAngle && !reachedPos){
             turn = finalAngle - roboAngle;
         }else if (PosX != targetX || PosY != targetY){
-            drive = Math.pow(Math.pow(displaceX,2) + Math.pow(displaceY,2), 1/2);
+            drive = Math.pow(Math.pow(displaceX,2) + Math.pow(displaceY,2), 0.5);
         }else if (roboAngle != targetAngle){
             turn = targetAngle - roboAngle;
         }
@@ -70,6 +72,9 @@ public class TargetMoving2 extends LinearOpMode {
         leftBackDrive.setPower(leftBack * speed);
         rightFrontDrive.setPower(rightFront * speed);
         rightBackDrive.setPower(rightBack * speed);
+    }
+    public double[] posToDouble(Pose pos){
+        return new double[] {pos.getX(),pos.getY(),pos.getHeading()};
     }
     public void runOpMode(){
         leftFrontDrive = hardwareMap.get(DcMotor .class, "FrontLeft");
