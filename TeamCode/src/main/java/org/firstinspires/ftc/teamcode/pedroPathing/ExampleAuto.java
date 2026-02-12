@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.pedroPathing; // make sure this aligns with class location
 
+import com.pedropathing.control.PIDFCoefficients;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
@@ -9,11 +10,18 @@ import com.pedropathing.paths.PathChain;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
+import com.bylazar.telemetry.PanelsTelemetry;
+import com.bylazar.telemetry.TelemetryManager;
+import static org.firstinspires.ftc.teamcode.pedroPathing.Tuning.telemetryM;
+
+//import org.firstinspires.ftc.robotcore.external.Telemetry;
+
 //import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Autonomous(name = "Example Auto", group = "Examples")
 public class ExampleAuto extends OpMode {
     private Follower follower;
+    private TelemetryManager manager;
 
     private int pathState;
 
@@ -77,7 +85,9 @@ public class ExampleAuto extends OpMode {
                 .build();
     }
 
-    public void autonomousPathUpdate() {
+    public void autonomousPathUpdate() throws InterruptedException {
+        Thread.sleep(3000);
+
         switch (pathState) {
             case 0:
                 follower.followPath(scorePreload);
@@ -183,14 +193,31 @@ public class ExampleAuto extends OpMode {
 
         // These loop the movements of the robot, these must be called continuously in order to work
         follower.update();
-        //autonomousPathUpdate();
+
+        PIDFCoefficients tcoeff = follower.getConstants().getCoefficientsTranslationalPIDF();
+        double fzpa = follower.getConstants().getForwardZeroPowerAcceleration();
 
         // Feedback to Driver Hub for debugging
-        telemetry.addData("path state", pathState);
-        telemetry.addData("x", follower.getPose().getX());
-        telemetry.addData("y", follower.getPose().getY());
-        telemetry.addData("heading", follower.getPose().getHeading());
+        telemetry.addData("T TPIDF", tcoeff);
+        telemetry.addData("T FZPA", fzpa);
+        telemetry.addData("T path state", pathState);
+        telemetry.addData("T x", follower.getPose().getX());
+        telemetry.addData("T y", follower.getPose().getY());
+        telemetry.addData("T heading", follower.getPose().getHeading());
         telemetry.update();
+        manager.addData("TPIDF", tcoeff);
+        manager.addData("pathState", pathState);
+        manager.addData("x", follower.getPose().getX());
+        manager.addData("y", follower.getPose().getY());
+        manager.addData("heading", follower.getPose().getHeading());
+        manager.update(telemetry);
+
+
+        try {
+            autonomousPathUpdate();
+        } catch(InterruptedException e){
+        }
+
     }
 
     /**
@@ -198,8 +225,10 @@ public class ExampleAuto extends OpMode {
      **/
     @Override
     public void init() {
+        manager = PanelsTelemetry.INSTANCE.getTelemetry();
         follower = Constants.createFollower(hardwareMap);
-        buildPaths();
         follower.setStartingPose(startPose);
+        buildPaths();
+        setPathState(0);
     }
 }
