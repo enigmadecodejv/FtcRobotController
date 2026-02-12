@@ -5,16 +5,15 @@ import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
-import com.pedropathing.util.Timer;
+//import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import  com.qualcomm.robotcore.eventloop.opmode.OpMode;
 
-import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+//import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Autonomous(name = "Example Auto", group = "Examples")
 public class ExampleAuto extends OpMode {
     private Follower follower;
-    private Timer pathTimer, actionTimer, opmodeTimer;
 
     private int pathState;
 
@@ -174,7 +173,6 @@ public class ExampleAuto extends OpMode {
      **/
     public void setPathState(int pState) {
         pathState = pState;
-        pathTimer.resetTimer();
     }
 
     /**
@@ -185,7 +183,7 @@ public class ExampleAuto extends OpMode {
 
         // These loop the movements of the robot, these must be called continuously in order to work
         follower.update();
-        autonomousPathUpdate();
+        //autonomousPathUpdate();
 
         // Feedback to Driver Hub for debugging
         telemetry.addData("path state", pathState);
@@ -200,11 +198,6 @@ public class ExampleAuto extends OpMode {
      **/
     @Override
     public void init() {
-        pathTimer = new Timer();
-        opmodeTimer = new Timer();
-        opmodeTimer.resetTimer();
-
-
         follower = Constants.createFollower(hardwareMap);
         buildPaths();
         follower.setStartingPose(startPose);
