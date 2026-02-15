@@ -7,28 +7,32 @@ import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class decodeIntake {
     public Gamepad gamepad1;
-    public DcMotor intake;
+    public DcMotor intakeRight, intakeLeft;
     public HardwareMap hardwareMap;
     public double intakePower;
     public boolean movingForward;
     public decodeIntake (HardwareMap hardwareMap, Gamepad gamepad1) {
         this.gamepad1 = gamepad1;
         this.hardwareMap = hardwareMap;
-        intake = hardwareMap.get(DcMotor.class, "Intake");
-        intake.setDirection(DcMotor.Direction.REVERSE);
+        intakeRight = hardwareMap.get(DcMotor.class, "IntakeRight");
+        intakeLeft = hardwareMap.get(DcMotor.class, "IntakeLeft");
+        intakeLeft.setDirection(DcMotor.Direction.REVERSE);
     }
     public void intake (){
         if (movingForward){
             intakePower = 1;
         }else if (!movingForward){
-            intakePower = 0.7;
+            intakePower = 1;
         }
         if (gamepad1.right_bumper){
-            intake.setPower(intakePower);
+            intakeRight.setPower(intakePower);
+            intakeLeft.setPower(intakePower);
         }else if (gamepad1.right_trigger > 0.25){
-            intake.setPower((-0.3) * intakePower);
+            intakeRight.setPower((-0.5) * intakePower);
+            intakeLeft.setPower((-0.5) * intakePower);
         }else {
-            intake.setPower(0);
+            intakeRight.setPower(0);
+            intakeLeft.setPower(0);
         }
     }
 }

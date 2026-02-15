@@ -21,9 +21,6 @@ public class DecodeTeleop extends LinearOpMode {
     decodeDriveCode driveCode;
     decodeIntake intakeCode;
     decodeOuttake outtakeCode;
-    DcMotor outtakeMotor;
-    DcMotor outtakeMotor2;
-    Servo outtakeServo;
 
     double redGoalX = 130, redGoalY = 138.25;
     double blueGoalX = 11, blueGoalY = 138.25;
@@ -147,24 +144,24 @@ public class DecodeTeleop extends LinearOpMode {
         }
         return Math.sqrt(Math.pow(goalDistanceX,2) * gravity/(goalDistanceX * Math.sin(2 * angle) - 2 * goalDistanceY * Math.pow(Math.cos(angle),2)));
     }
-    public void autoOuttake(double speed){
-        powerGood = PowerGood.yes;
-        if (speed != speed){
-            powerGood = PowerGood.tooClose;
-            power = 0;
-        }else {
-            power = speed/ (motorRotSpeed * motorRadius);
-            if (power > 0.8) {
-                power = 0.8;
-                powerGood = PowerGood.tooFar;
-            } else if (power < -0.8) {
-                power = -0.8;
-                powerGood = PowerGood.tooFar;
-            }
-        }
-        outtakeMotor.setPower(power);
-        outtakeMotor2.setPower(power);
-    }
+//    public void autoOuttake(double speed){
+//        powerGood = PowerGood.yes;
+//        if (speed != speed){
+//            powerGood = PowerGood.tooClose;
+//            power = 0;
+//        }else {
+//            power = speed/ (motorRotSpeed * motorRadius);
+//            if (power > 0.8) {
+//                power = 0.8;
+//                powerGood = PowerGood.tooFar;
+//            } else if (power < -0.8) {
+//                power = -0.8;
+//                powerGood = PowerGood.tooFar;
+//            }
+//        }
+//        outtakeMotor.setPower(power);
+//        outtakeMotor2.setPower(power);
+//    }
     /*public double getDistanceToGoal() {
         double robotPosX, robotPosY;
 
@@ -276,7 +273,7 @@ public class DecodeTeleop extends LinearOpMode {
         }
         telemetry.addData("power: ",power);
         telemetry.addData("speed:", getVelocityShot());
-        autoOuttake(getVelocityShot());*/
+//        autoOuttake(getVelocityShot());*/
         driveCode.runWheels();
         intakeCode.intake();
         outtakeCode.outtake();
@@ -284,8 +281,6 @@ public class DecodeTeleop extends LinearOpMode {
         pinpoint.update();
     }
     void initialize() {
-        //hardware
-        //pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");\
         driveCode = new decodeDriveCode(gamepad1, hardwareMap);
         intakeCode = new decodeIntake(hardwareMap, gamepad1);
         outtakeCode = new decodeOuttake(hardwareMap, gamepad1);
@@ -299,17 +294,12 @@ public class DecodeTeleop extends LinearOpMode {
     @Override
     public void runOpMode() {
         initialize();
-        outtakeMotor = hardwareMap.get(DcMotor.class, "ShooterRight");
-        outtakeMotor2 = hardwareMap.get(DcMotor.class, "ShooterLeft");
-        outtakeMotor2.setDirection(DcMotor.Direction.REVERSE);
-        outtakeServo = hardwareMap.get(Servo.class, "Feeder");
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");
-        pinpoint.setOffsets(2, 2.5, DistanceUnit.INCH);
+        pinpoint.setOffsets(6.75, -6.5, DistanceUnit.INCH);
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
         pinpoint.resetPosAndIMU();
         pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
         waitForStart();
-
 
         while (opModeIsActive()) {
             mainLoop();
