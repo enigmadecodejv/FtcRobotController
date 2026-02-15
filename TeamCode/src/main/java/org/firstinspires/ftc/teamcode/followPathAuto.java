@@ -252,8 +252,7 @@ public class followPathAuto extends LinearOpMode {
             } else if (!robot.isBusy() && partsOfAuto == PartsOfAuto.shoot) {
                 telemetry.addLine("before");
                 telemetry.update();
-                l = goToNextPose();
-                telemetry.addData("p", l);
+                goToNextPose();
                 outtake();
                 partsOfAuto = PartsOfAuto.move;
             }*/
