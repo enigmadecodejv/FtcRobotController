@@ -6,26 +6,30 @@ import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathBuilder;
 import com.pedropathing.paths.PathChain;
+import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 
 @Autonomous(name="FollowPathAuto", group="Enigma")
 public class followPathAuto extends LinearOpMode {
-    DcMotor intakeMotor;
+    DcMotor intakeLeft;
+    DcMotor intakeRight;
     public int tickNum = 0;
     public boolean isFar;
-    DcMotor outtakeMotor;
-    DcMotor outtakeMotor2;
-    Servo outtakeServo;
+    public Timer timer;
+    DcMotor outtakeRight;
+    DcMotorEx outtakeLeft;
+    Servo outtakeGate;
     public boolean isRed = false;
     public String color = "blue";
     public boolean colorSet = false;
     public boolean isStartSet = false;
-    public double timer = 0;
     public double timer2;
     public boolean timerSet = true;
     public Pose[] positionsBlueFar = {new Pose(59,16, Math.toRadians(113)), new Pose(36.5,35.5, Math.toRadians(180)), new Pose(7,35.5,Math.toRadians(315)), new Pose(62,8, Math.toRadians(111)), new Pose(36.5,60, Math.toRadians(180)), new Pose(14,60, Math.toRadians(300)), new Pose(62,8,Math.toRadians(111))};
@@ -48,23 +52,22 @@ public class followPathAuto extends LinearOpMode {
     public Pose lastPose;
     public int numberOfArtifacts = 2;
     public void intake (){
-        intakeMotor.setPower(-0.9);
+        intakeLeft.setPower(1);
+        intakeRight.setPower(1);
     }
     public void turnOffIntake () {
-        intakeMotor.setPower(0);
+        intakeLeft.setPower(0);
+        intakeRight.setPower(0);
     }
     public void outtake () {
-        outtakeServo.setPosition(1);
-        sleep(250);
+        timer.resetTimer();
+        outtakeGate.setPosition(0.35);
         while (numberOfArtifacts > 0 && opModeIsActive()) {
-            outtakeServo.setPosition(0.68);
-            sleep(1000);
-            outtakeServo.setPosition(1);
-            sleep(250);
             intake();
-            sleep(1000);
-            turnOffIntake();
-            numberOfArtifacts--;
+            if (timer.getElapsedTimeSeconds() < 1) {
+                turnOffIntake();
+                numberOfArtifacts = 0;
+            }
         }
     }
     public void redOrBlue () {
@@ -134,7 +137,6 @@ public class followPathAuto extends LinearOpMode {
         robot.followPath(forwards, true);
         robot.update();
         while (robot.isBusy() && opModeIsActive()) {
-            //sleep(100);
             robot.update();
         }
         lastPose = endPose;
@@ -178,11 +180,16 @@ public class followPathAuto extends LinearOpMode {
     //pickup balls
     public void runOpMode (){
         robot = Constants.createFollower(hardwareMap);
-        intakeMotor = hardwareMap.get(DcMotor.class, "Intake");
-        outtakeMotor = hardwareMap.get(DcMotor.class, "ShooterRight");
-        outtakeMotor2 = hardwareMap.get(DcMotor.class, "ShooterLeft");
-        outtakeServo = hardwareMap.get(Servo.class, "Feeder");
-        outtakeMotor2.setDirection(DcMotor.Direction.REVERSE);
+        intakeLeft = hardwareMap.get(DcMotor.class, "IntakeLeft");
+        intakeRight = hardwareMap.get(DcMotor.class, "IntakeRight");
+        outtakeRight = hardwareMap.get(DcMotor.class, "OuttakeRight");
+        outtakeLeft = hardwareMap.get(DcMotorEx.class, "OuttakeLeft");
+        outtakeGate = hardwareMap.get(Servo.class, "OuttakeGate");
+        outtakeLeft.setDirection(DcMotor.Direction.REVERSE);
+        intakeLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+        outtakeLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        timer = new Timer();
+        timer.resetTimer();
 
         while (!opModeIsActive()) {
             redOrBlue();
@@ -196,50 +203,14 @@ public class followPathAuto extends LinearOpMode {
         waitForStart();
         Pose l;
         while (opModeIsActive()) {
-            /*if (isFar) {
-                outtakeMotor.setPower(-0.75);
-                outtakeMotor2.setPower(-0.75);
+            if (isFar) {
+                outtakeLeft.setVelocity(1000);
+                outtakeRight.setPower(outtakeLeft.getPower());
             } else {
-                outtakeMotor.setPower(-0.6);
-                outtakeMotor2.setPower(-0.6);
+                outtakeLeft.setVelocity(1000);
+                outtakeRight.setPower(outtakeLeft.getPower());
             }
-            sleep(1000);*/
-            telemetry.addData("start pos", robot.getPose());
-            telemetry.addData("pos", robot.getPose());
-            robot.update();
-            telemetry.update();
-            sleep(3000);
-            goToPos(new Pose(121, 23, Math.toRadians(90)));
-            //outtake();
-            goToPos(new Pose(24, 23, Math.toRadians(90)));
-            telemetry.addData("pos", robot.getPose());
-            telemetry.update();
-            //intake();
-            goToPos(new Pose(24, 120, Math.toRadians(90)));
-            telemetry.addData("pos", robot.getPose());
-            telemetry.update();
-            //turnOffIntake();
-            numberOfArtifacts = 2;
-            goToPos(new Pose(120, 120, Math.toRadians(90)));
-            telemetry.addData("pos", robot.getPose());
-            telemetry.update();
-            //outtake();
-            break;
-            //set power baced off of distance
-            //goto shoot pos
-            //shoot *2
-            //goto next balls (make shure intake is running)
-            //goto shoot pos
-            //shoot *2
-            //goto next balls
-            //loop
-            /*if (isFar) {
-                outtakeMotor.setPower(-0.65);
-                outtakeMotor2.setPower(-0.65);
-            } else {
-                outtakeMotor.setPower(-0.6);
-                outtakeMotor2.setPower(-0.6);
-            }
+            outtakeGate.setPosition(0.7);
             if (!robot.isBusy() && partsOfAuto == PartsOfAuto.move) {
                 goToNextPose();
                 partsOfAuto = PartsOfAuto.intake;
@@ -247,15 +218,13 @@ public class followPathAuto extends LinearOpMode {
                 intake();
                 goToNextPose();
                 turnOffIntake();
-                numberOfArtifacts = 2;
+                numberOfArtifacts = 3;
                 partsOfAuto = PartsOfAuto.shoot;
             } else if (!robot.isBusy() && partsOfAuto == PartsOfAuto.shoot) {
-                telemetry.addLine("before");
-                telemetry.update();
                 goToNextPose();
                 outtake();
                 partsOfAuto = PartsOfAuto.move;
-            }*/
+            }
         }
     }
 }

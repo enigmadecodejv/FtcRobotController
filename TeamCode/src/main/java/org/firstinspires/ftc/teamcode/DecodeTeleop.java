@@ -279,6 +279,8 @@ public class DecodeTeleop extends LinearOpMode {
         outtakeCode.outtake();
         telemetry.update();
         pinpoint.update();
+        telemetry.addData("motor velocity: ", outtakeCode.outtakeLeft.getVelocity());
+        telemetry.update();
     }
     void initialize() {
         driveCode = new decodeDriveCode(gamepad1, hardwareMap);

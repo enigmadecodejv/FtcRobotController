@@ -28,8 +28,8 @@ public class decodeIntake {
             intakeRight.setPower(intakePower);
             intakeLeft.setPower(intakePower);
         }else if (gamepad1.right_trigger > 0.25){
-            intakeRight.setPower((-0.5) * intakePower);
-            intakeLeft.setPower((-0.5) * intakePower);
+            intakeRight.setPower((-0.8) * intakePower);
+            intakeLeft.setPower((-0.8) * intakePower);
         }else {
             intakeRight.setPower(0);
             intakeLeft.setPower(0);
