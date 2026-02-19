@@ -14,6 +14,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.Drive.decodeDriveCode;
 import org.firstinspires.ftc.teamcode.Outtake.decodeOuttake;
 import org.firstinspires.ftc.teamcode.intake.decodeIntake;
+import com.bylazar.telemetry.PanelsTelemetry;
+import com.bylazar.telemetry.TelemetryManager;
 
 @TeleOp(name="DecodeTeleop", group="Enigma")
 public class DecodeTeleop extends LinearOpMode {
@@ -37,6 +39,7 @@ public class DecodeTeleop extends LinearOpMode {
     public double goalDistanceZ = goalZ - shootZ;
     public double goalDistanceXY;
     double quadrant;
+    private TelemetryManager manager;
     double motorRotSpeed = 6000 * 2 * Math.PI/60;
     double motorRadius = 4.25/2.54;
     boolean variableAngle = false;
