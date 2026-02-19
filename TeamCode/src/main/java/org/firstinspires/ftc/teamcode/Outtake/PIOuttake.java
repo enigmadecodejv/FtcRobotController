@@ -25,11 +25,11 @@ public class PIOuttake {
     public double timer;
     public double lastError = 33778;
     public static double kp = 0.01;
-    public static double ti = 960;
+    public static double ti = 120;
     public static double td = 0;
     public double integral2 = 0;
-    public static double farSpeed = -1750;
-    public static double closeSpeed = -1300;
+    public static double farSpeed = 1425;
+    public static double closeSpeed = 1150;
     public double speedPID = closeSpeed;
 
     public PIOuttake(HardwareMap hardwareMap, Gamepad gamepad1) {

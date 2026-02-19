@@ -32,8 +32,8 @@ public class followPathAuto extends LinearOpMode {
     public boolean isStartSet = false;
     public double timer2;
     public boolean timerSet = true;
-    public Pose[] positionsBlueFar = {new Pose(59,16, Math.toRadians(113)), new Pose(36.5,35.5, Math.toRadians(180)), new Pose(7,35.5,Math.toRadians(315)), new Pose(62,8, Math.toRadians(111)), new Pose(36.5,60, Math.toRadians(180)), new Pose(14,60, Math.toRadians(300)), new Pose(62,8,Math.toRadians(111))};
-    public Pose[] positionsRedFar = {new Pose(80, 16, Math.toRadians(66)), new Pose(105, 35, 0), new Pose(131, 35, 0), new Pose(80, 16, Math.toRadians(66)), new Pose(130, 60, 0), new Pose(80, 16, Math.toRadians(66))};
+    public Pose[] positionsBlueFar = {new Pose(59,16, Math.toRadians(293)), new Pose(36.5,35.5, Math.toRadians(180)), new Pose(7,35.5,Math.toRadians(315)), new Pose(62,8, Math.toRadians(111)), new Pose(36.5,60, Math.toRadians(180)), new Pose(14,60, Math.toRadians(300)), new Pose(62,8,Math.toRadians(111))};
+    public Pose[] positionsRedFar = {new Pose(80, 16, Math.toRadians(246)), new Pose(105, 35, 0), new Pose(131, 35, 0), new Pose(80, 16, Math.toRadians(246)), new Pose(130, 60, 0), new Pose(80, 16, Math.toRadians(246))};
     public Pose[] positionsBlueNear = {new Pose(59, 85, Math.toRadians(138))};
     public Pose[] positionsRedNear = {new Pose(85, 85, Math.toRadians(48))};
     private Follower robot;
@@ -102,24 +102,24 @@ public class followPathAuto extends LinearOpMode {
         telemetry.addLine("looking for starting pos press a for nearside, b for farside");
         if (color.equals("blue")) {
             if (gamepad1.b) {
-                robotPos = new Pose(56, 8, Math.toRadians(90));
+                robotPos = new Pose(56, 8, Math.toRadians(270));
                 isFar = true;
             } else if (gamepad1.a) {
-                robotPos = new Pose(39, 136, Math.toRadians(270));
+                robotPos = new Pose(39, 136, Math.toRadians(90));
                 isFar = false;
             }
         } else if (color.equals("red")) {
             if (gamepad1.b) {
-                robotPos = new Pose(85, 8.75, Math.toRadians(90));
+                robotPos = new Pose(85, 8.75, Math.toRadians(270));
                 isFar = true;
             } else if (gamepad1.a) {
-                robotPos = new Pose(104, 136, Math.toRadians(270));
+                robotPos = new Pose(104, 136, Math.toRadians(90));
                 isFar = false;
             }
         }
         if (robotPos != null) {
-            robot.setStartingPose(new Pose(72, 72, 90));
-            lastPose = new Pose(72, 72, 90);
+            robot.setStartingPose(robotPos);
+            lastPose = robotPos;
             robot.update();
             isStartSet = true;
         }

@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -12,17 +13,19 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.Drive.decodeDriveCode;
+import org.firstinspires.ftc.teamcode.Outtake.PIOuttake;
 import org.firstinspires.ftc.teamcode.Outtake.decodeOuttake;
 import org.firstinspires.ftc.teamcode.intake.decodeIntake;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 
+@Configurable
 @TeleOp(name="DecodeTeleop", group="Enigma")
 public class DecodeTeleop extends LinearOpMode {
     public GoBildaPinpointDriver pinpoint;
     decodeDriveCode driveCode;
     decodeIntake intakeCode;
-    decodeOuttake outtakeCode;
+    PIOuttake outtakeCode;
 
     double redGoalX = 130, redGoalY = 138.25;
     double blueGoalX = 11, blueGoalY = 138.25;
@@ -39,6 +42,8 @@ public class DecodeTeleop extends LinearOpMode {
     public double goalDistanceZ = goalZ - shootZ;
     public double goalDistanceXY;
     double quadrant;
+    DcMotorEx outtakeMotor;
+    DcMotor outtakeMotor2;
     private TelemetryManager manager;
     double motorRotSpeed = 6000 * 2 * Math.PI/60;
     double motorRadius = 4.25/2.54;
@@ -279,16 +284,27 @@ public class DecodeTeleop extends LinearOpMode {
 //        autoOuttake(getVelocityShot());*/
         driveCode.runWheels();
         intakeCode.intake();
-        outtakeCode.outtake();
+        outtakeCode.runUsingPID();
         telemetry.update();
         pinpoint.update();
-        telemetry.addData("motor velocity: ", outtakeCode.outtakeLeft.getVelocity());
+        telemetry.addData("motor velocity: ", outtakeCode.outtakeMotor.getVelocity());
+        manager.addData("MotorVelocity", outtakeMotor.getVelocity());
+        manager.addData("Integral", outtakeCode.integral);
+        manager.addData("Integral2", outtakeCode.integral2);
+        manager.addData("error", outtakeCode.error);
+        if (PIOuttake.ti == 0){
+            manager.addData("Integral/ti", 0);
+        }else {
+            manager.addData("Integral/ti", outtakeCode.integral/PIOuttake.ti);
+        }
+        manager.update();
         telemetry.update();
     }
     void initialize() {
+        manager = PanelsTelemetry.INSTANCE.getTelemetry();
         driveCode = new decodeDriveCode(gamepad1, hardwareMap);
         intakeCode = new decodeIntake(hardwareMap, gamepad1);
-        outtakeCode = new decodeOuttake(hardwareMap, gamepad1);
+        outtakeCode = new PIOuttake(hardwareMap, gamepad1);
         if (driveCode.drive > 0.25){
             intakeCode.movingForward = true;
         }else {
@@ -300,6 +316,8 @@ public class DecodeTeleop extends LinearOpMode {
     public void runOpMode() {
         initialize();
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");
+        outtakeMotor = hardwareMap.get(DcMotorEx.class, "OuttakeLeft");
+        outtakeMotor2 = hardwareMap.get(DcMotor.class, "OuttakeRight");
         pinpoint.setOffsets(6.75, -6.5, DistanceUnit.INCH);
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
         pinpoint.resetPosAndIMU();
