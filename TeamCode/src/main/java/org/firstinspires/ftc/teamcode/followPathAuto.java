@@ -14,7 +14,10 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
 
+import org.firstinspires.ftc.teamcode.Outtake.PIOuttake;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+import com.bylazar.telemetry.PanelsTelemetry;
+import com.bylazar.telemetry.TelemetryManager;
 
 @Autonomous(name="FollowPathAuto", group="Enigma")
 public class followPathAuto extends LinearOpMode {
@@ -26,16 +29,18 @@ public class followPathAuto extends LinearOpMode {
     DcMotor outtakeRight;
     DcMotorEx outtakeLeft;
     Servo outtakeGate;
+    PIOuttake outtakeCode;
     public boolean isRed = false;
     public String color = "blue";
     public boolean colorSet = false;
     public boolean isStartSet = false;
     public double timer2;
     public boolean timerSet = true;
-    public Pose[] positionsBlueFar = {new Pose(59,16, Math.toRadians(293)), new Pose(36.5,35.5, Math.toRadians(180)), new Pose(7,35.5,Math.toRadians(315)), new Pose(62,8, Math.toRadians(111)), new Pose(36.5,60, Math.toRadians(180)), new Pose(14,60, Math.toRadians(300)), new Pose(62,8,Math.toRadians(111))};
-    public Pose[] positionsRedFar = {new Pose(80, 16, Math.toRadians(246)), new Pose(105, 35, 0), new Pose(131, 35, 0), new Pose(80, 16, Math.toRadians(246)), new Pose(130, 60, 0), new Pose(80, 16, Math.toRadians(246))};
-    public Pose[] positionsBlueNear = {new Pose(59, 85, Math.toRadians(138))};
-    public Pose[] positionsRedNear = {new Pose(85, 85, Math.toRadians(48))};
+    public Pose shootPos;
+    public Pose[] positionsBlueFar = {new Pose(40,35, Math.toRadians(180)), new Pose(10,35,Math.toRadians(180)), new Pose(55,58, Math.toRadians(180)), new Pose(10,60, Math.toRadians(180))};
+    public Pose[] positionsRedFar = {new Pose(97, 35, 0), new Pose(125, 36, 0), new Pose(83, 55, 0), new Pose(125, 60, Math.toRadians(0))};
+    public Pose[] positionsBlueNear = {new Pose(48, 84, Math.toRadians(180)), new Pose(15, 84, Math.toRadians(180)), new Pose(58, 63, Math.toRadians(180)), new Pose(14, 60, Math.toRadians(180))};
+    public Pose[] positionsRedNear = {new Pose(106, 84, 0), new Pose(125, 84, 0), new Pose(125, 59, 0), new Pose(125, 60, 0)};
     private Follower robot;
     public Pose[] positions;
     public int posIndex = 0;
@@ -43,6 +48,7 @@ public class followPathAuto extends LinearOpMode {
     private PathChain forwards;
     public Path scorePreload = null;
     public Pose robotPos = null;
+    private TelemetryManager manager;
     enum PartsOfAuto {
         move,
         intake,
@@ -64,7 +70,7 @@ public class followPathAuto extends LinearOpMode {
         outtakeGate.setPosition(0.35);
         while (numberOfArtifacts > 0 && opModeIsActive()) {
             intake();
-            if (timer.getElapsedTimeSeconds() < 1) {
+            if (timer.getElapsedTimeSeconds() >= 1) {
                 turnOffIntake();
                 numberOfArtifacts = 0;
             }
@@ -103,17 +109,21 @@ public class followPathAuto extends LinearOpMode {
         if (color.equals("blue")) {
             if (gamepad1.b) {
                 robotPos = new Pose(56, 8, Math.toRadians(270));
+                shootPos = new Pose(59,16, Math.toRadians(293));
                 isFar = true;
             } else if (gamepad1.a) {
                 robotPos = new Pose(39, 136, Math.toRadians(90));
+                shootPos = new Pose(59, 85, Math.toRadians(138));
                 isFar = false;
             }
         } else if (color.equals("red")) {
             if (gamepad1.b) {
                 robotPos = new Pose(85, 8.75, Math.toRadians(270));
+                shootPos = new Pose(85, 16, Math.toRadians(246));
                 isFar = true;
             } else if (gamepad1.a) {
                 robotPos = new Pose(104, 136, Math.toRadians(90));
+                shootPos = new Pose(85, 85, Math.toRadians(48));
                 isFar = false;
             }
         }
@@ -134,7 +144,7 @@ public class followPathAuto extends LinearOpMode {
                 .addPath(new BezierLine(lastPose, endPose))
                 .setLinearHeadingInterpolation(lastPose.getHeading(), endPose.getHeading())
                 .build();
-        robot.followPath(forwards, true);
+        robot.followPath(forwards, 0.5, true);
         robot.update();
         while (robot.isBusy() && opModeIsActive()) {
             robot.update();
@@ -160,16 +170,15 @@ public class followPathAuto extends LinearOpMode {
         posIndex++;
         return p;
     }
-    public Pose goToNextPose () {
+    public Pose goToNextPose (Pose nextPos) {
         telemetry.addLine("here");
         telemetry.update();
-        Pose p = getNextPose();
-        telemetry.addData("p", p);
+        telemetry.addData("p", nextPos);
         telemetry.update();
-        goToPos(p);
+        goToPos(nextPos);
         telemetry.addLine("we somehow got here");
         telemetry.update();
-        return p;
+        return nextPos;
     }
 
     //set start pos
@@ -179,15 +188,23 @@ public class followPathAuto extends LinearOpMode {
     //go to shoot pos
     //pickup balls
     public void runOpMode (){
+        outtakeCode = new PIOuttake(hardwareMap, gamepad1);
+        manager = PanelsTelemetry.INSTANCE.getTelemetry();
         robot = Constants.createFollower(hardwareMap);
+
         intakeLeft = hardwareMap.get(DcMotor.class, "IntakeLeft");
         intakeRight = hardwareMap.get(DcMotor.class, "IntakeRight");
+
         outtakeRight = hardwareMap.get(DcMotor.class, "OuttakeRight");
         outtakeLeft = hardwareMap.get(DcMotorEx.class, "OuttakeLeft");
+
         outtakeGate = hardwareMap.get(Servo.class, "OuttakeGate");
+
         outtakeLeft.setDirection(DcMotor.Direction.REVERSE);
         intakeLeft.setDirection(DcMotorSimple.Direction.REVERSE);
+
         outtakeLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+
         timer = new Timer();
         timer.resetTimer();
 
@@ -203,28 +220,39 @@ public class followPathAuto extends LinearOpMode {
         waitForStart();
         Pose l;
         while (opModeIsActive()) {
+            manager.addData("MotorVelocity", outtakeLeft.getVelocity());
+            manager.addData("Integral", outtakeCode.integral);
+            manager.addData("Integral2", outtakeCode.integral2);
+            manager.addData("error", outtakeCode.error);
             if (isFar) {
-                outtakeLeft.setVelocity(1000);
-                outtakeRight.setPower(outtakeLeft.getPower());
+                outtakeCode.speedPID = PIOuttake.farSpeed;
+                double motorPower = outtakeCode.outtakePID(outtakeCode.speedPID);
+                outtakeLeft.setPower(motorPower);
+                outtakeRight.setPower(motorPower);
             } else {
-                outtakeLeft.setVelocity(1000);
-                outtakeRight.setPower(outtakeLeft.getPower());
+                outtakeCode.speedPID = PIOuttake.closeSpeed;
+                double motorPower = outtakeCode.outtakePID(outtakeCode.speedPID);
+                outtakeLeft.setPower(motorPower);
+                outtakeRight.setPower(motorPower);
             }
             outtakeGate.setPosition(0.7);
-            if (!robot.isBusy() && partsOfAuto == PartsOfAuto.move) {
-                goToNextPose();
+            if (partsOfAuto == PartsOfAuto.move && !robot.isBusy() && Math.abs(outtakeLeft.getVelocity() - outtakeCode.speedPID) < 20) {
+                goToNextPose(getNextPose());
                 partsOfAuto = PartsOfAuto.intake;
-            } else if (!robot.isBusy() && partsOfAuto == PartsOfAuto.intake) {
+
+            } else if (partsOfAuto == PartsOfAuto.intake && !robot.isBusy() && Math.abs(outtakeLeft.getVelocity() - outtakeCode.speedPID) < 20) {
                 intake();
-                goToNextPose();
-                turnOffIntake();
+                goToNextPose(getNextPose());
                 numberOfArtifacts = 3;
                 partsOfAuto = PartsOfAuto.shoot;
-            } else if (!robot.isBusy() && partsOfAuto == PartsOfAuto.shoot) {
-                goToNextPose();
+
+            } else if (partsOfAuto == PartsOfAuto.shoot && !robot.isBusy() && Math.abs(outtakeLeft.getVelocity() - outtakeCode.speedPID) < 20) {
+                turnOffIntake();
+                goToNextPose(shootPos);
                 outtake();
                 partsOfAuto = PartsOfAuto.move;
             }
+            manager.update();
         }
     }
 }
