@@ -9,10 +9,12 @@ import com.qualcomm.robotcore.hardware.Servo;
 @Configurable
 public class PIOuttake {
     public Gamepad gamepad1;
+    public Gamepad gamepad2;
     public Servo outtakeServo;
     public DcMotorEx outtakeMotor;
     public DcMotor outtakeMotor2;
     public Gamepad currentGamepad1;
+    public Gamepad currentGamepad2;
     public Gamepad pastGamepad1;
     public HardwareMap hardwareMap;
     public boolean shouldTheOutakeMotorsBeOnHighPower = false;
@@ -29,17 +31,22 @@ public class PIOuttake {
     public static double td = 0;
     public double integral2 = 0;
     public static double farSpeed = 1425;
-    public static double closeSpeed = 1150;
+    public static double closeSpeed = 1200;
     public double speedPID = closeSpeed;
+    public Servo LED;
 
-    public PIOuttake(HardwareMap hardwareMap, Gamepad gamepad1) {
+    public PIOuttake(HardwareMap hardwareMap, Gamepad gamepad1, Gamepad gamepad2) {
         this.gamepad1 = gamepad1;
+        this.gamepad2 = gamepad2;
         this.hardwareMap = hardwareMap;
         outtakeMotor = hardwareMap.get(DcMotorEx.class, "OuttakeLeft");
         outtakeMotor2 = hardwareMap.get(DcMotor.class, "OuttakeRight");
         outtakeMotor.setDirection(DcMotor.Direction.REVERSE);
         outtakeServo = hardwareMap.get(Servo.class, "OuttakeGate");
+        LED = hardwareMap.get(Servo.class, "RGBLightIndicator");
+
         currentGamepad1 = gamepad1;
+        currentGamepad2 = gamepad2;
     }
     public double outtakePID(double targetSpeed){
         error = targetSpeed - outtakeMotor.getVelocity();
@@ -56,12 +63,15 @@ public class PIOuttake {
         return kp*(error + integral/ti + td*derivative);
     }
     public void runUsingPID(){
-        if (currentGamepad1.a){
+        if (currentGamepad2.a){
             speedPID = closeSpeed;
-        }else if (currentGamepad1.y){
+            LED.setPosition(0.621);
+        }else if (currentGamepad2.y){
             speedPID = farSpeed;
-        }else if (currentGamepad1.dpad_down || currentGamepad1.dpad_left || currentGamepad1.dpad_up || currentGamepad1.dpad_right){
+            LED.setPosition(0.287);
+        }else if (currentGamepad2.dpad_down || currentGamepad2.dpad_left || currentGamepad2.dpad_up || currentGamepad2.dpad_right){
             speedPID = 0;
+            LED.setPosition(0.510);
         }
         double targetPower = outtakePID(speedPID);
         if(targetPower > 1){

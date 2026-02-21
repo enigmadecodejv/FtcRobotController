@@ -8,6 +8,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.Range;
 
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.Drive.decodeDriveCode;
 import org.firstinspires.ftc.teamcode.Outtake.PIOuttake;
 import org.firstinspires.ftc.teamcode.intake.decodeIntake;
@@ -30,10 +31,11 @@ public class DecodeTeleop extends LinearOpMode {
     DcMotor outtakeMotor2;
     private TelemetryManager manager;
     Limelight3A limelight;
-    public int goalTag;
+    public int goalTag = 20;
     public double DX = 0;
-    public double kP_TURN = 0.02;
-    public double MAXTURN = 0.45;
+    public double DIST = 0;
+    public double kP_TURN = 0.015;
+    public double MAXTURN = 0.75;
 
     private void setTurnInPlace(double turn) {
         driveCode.leftFrontDrive.setPower(+turn);
@@ -43,18 +45,34 @@ public class DecodeTeleop extends LinearOpMode {
     }
 
     private void mainLoop() {
-        LLResult result = limelight.getLatestResult();
-        if (result != null && result.isValid()) {
+        if (gamepad2.x) {
+            //bluetag
+            goalTag = 20;
+        } else if (gamepad2.b){
+            //redtag
+            goalTag = 24;
+        }
+        if (goalTag == 20) {
+            telemetry.addLine("going for blue");
+        } else {
+            telemetry.addLine("going for red");
+        }
 
+        LLResult result = limelight.getLatestResult();
+
+        if (result != null && result.isValid()) {
+            DX = Double.NaN;
             // Get all detected AprilTags
             for (LLResultTypes.FiducialResult f : result.getFiducialResults()) {
                 if (f.getFiducialId() == goalTag) {
-                    DX = f.getTargetXDegrees();
+                    DX = f.getTargetXDegrees() + 6.5;
+                    Pose3D pose = f.getRobotPoseTargetSpace();
+                    DIST = pose.getPosition().z;
                 }
             }
         }
-        if (gamepad1.x) {
-            if (!Double.isNaN(DX) && Math.abs(DX) <= 3) {
+        if (gamepad2.right_bumper || gamepad2.left_bumper) {
+            if (!Double.isNaN(DX) && Math.abs(DX) <= 2.5) {
                 setTurnInPlace(0);
             } else {
                 double turn = Range.clip(kP_TURN * DX, -MAXTURN, MAXTURN);
@@ -74,6 +92,8 @@ public class DecodeTeleop extends LinearOpMode {
         manager.addData("Integral", outtakeCode.integral);
         manager.addData("Integral2", outtakeCode.integral2);
         manager.addData("error", outtakeCode.error);
+        telemetry.addData("DX", DX);
+        telemetry.addData("DIST", DIST);
 
         if (PIOuttake.ti == 0){
             manager.addData("Integral/ti", 0);
@@ -86,7 +106,7 @@ public class DecodeTeleop extends LinearOpMode {
         manager = PanelsTelemetry.INSTANCE.getTelemetry();
         driveCode = new decodeDriveCode(gamepad1, hardwareMap);
         intakeCode = new decodeIntake(hardwareMap, gamepad1);
-        outtakeCode = new PIOuttake(hardwareMap, gamepad1);
+        outtakeCode = new PIOuttake(hardwareMap, gamepad1, gamepad2);
         limelight = hardwareMap.get(Limelight3A.class, "limelight");
         limelight.pipelineSwitch(0); // AprilTag pipeline
         limelight.start();
@@ -96,17 +116,8 @@ public class DecodeTeleop extends LinearOpMode {
             intakeCode.movingForward = false;
         }
         while (!opModeIsActive()) {
-            if (gamepad1.x) {
-                //bluetag
-                goalTag = 20;
-                telemetry.addLine("going for blue");
-            } else {
-                //redtag
-                goalTag = 21;
-                telemetry.addLine("going for red");
-            }
+            telemetry.update();
         }
-        telemetry.update();
     }
 
     @Override

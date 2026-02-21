@@ -43,24 +43,37 @@ public class followPathAuto extends LinearOpMode {
             new Pose(40,35, Math.toRadians(180)),
             new Pose(10,35,Math.toRadians(180)),
             new Pose(55, 58, Math.toRadians(180)),
-            new Pose(10,60, Math.toRadians(180))
+            new Pose(10,60, Math.toRadians(180)),
+            new Pose(36, 84, Math.toRadians(180)),
+            new Pose(13, 84, Math.toRadians(180)),
+            new Pose(39,12, Math.toRadians(180))
     };
     public Pose[] positionsRedFar = {
             new Pose(97, 35, 0),
             new Pose(125, 36, 0),
             new Pose(83, 55, 0),
-            new Pose(125, 60, Math.toRadians(0))
+            new Pose(125, 60, Math.toRadians(0)),
+            new Pose(97, 84, Math.toRadians(0)),
+            new Pose(130, 84, Math.toRadians(0)),
+            new Pose(114, 12, Math.toRadians(0))
     };
     public Pose[] positionsBlueNear = {
             new Pose(48, 84, Math.toRadians(180)),
             new Pose(15, 84, Math.toRadians(180)),
             new Pose(58, 63, Math.toRadians(180)),
-            new Pose(14, 60, Math.toRadians(180))};
+            new Pose(14, 60, Math.toRadians(180)),
+            new Pose(40,35, Math.toRadians(180)),
+            new Pose(10,35, Math.toRadians(180)),
+            new Pose(24, 84, Math.toRadians(180))
+    };
     public Pose[] positionsRedNear = {
             new Pose(106, 84, 0),
             new Pose(125, 84, 0),
             new Pose(125, 59, 0),
-            new Pose(125, 60, 0)
+            new Pose(125, 60, 0),
+            new Pose(97, 35, 0),
+            new Pose(125, 36, 0),
+            new Pose(120, 90, 0)
     };
     private Follower robot;
     public Pose[] positions;
@@ -84,6 +97,7 @@ public class followPathAuto extends LinearOpMode {
     public static double closeSpeed = 1150;
     public double speedPID = closeSpeed;
     public double targetPower;
+    boolean isDone = false;
     enum PartsOfAuto {
         move,
         intake,
@@ -213,7 +227,7 @@ public class followPathAuto extends LinearOpMode {
         Pose p;
         if (color.equals("red")) {
             if (isFar) {
-                p = positionsRedFar [posIndex];
+                p = positionsRedFar[posIndex];
             }  else  {
                 p = positionsRedNear [posIndex];
             }
