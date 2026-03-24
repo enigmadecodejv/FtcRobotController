@@ -5,7 +5,6 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.Path;
-import com.pedropathing.paths.PathBuilder;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -25,7 +24,6 @@ import com.bylazar.telemetry.TelemetryManager;
 public class followPathAuto extends LinearOpMode {
     DcMotor intakeLeft;
     DcMotor intakeRight;
-    public int tickNum = 0;
     public boolean isFar;
     public Timer timer;
     DcMotor outtakeRight;
@@ -43,32 +41,41 @@ public class followPathAuto extends LinearOpMode {
             new Pose(40,35, Math.toRadians(180)),
             new Pose(10,35,Math.toRadians(180)),
             new Pose(55, 58, Math.toRadians(180)),
-            new Pose(10,60, Math.toRadians(180))
+            new Pose(10,60, Math.toRadians(180)),
+            new Pose(36, 84, Math.toRadians(180)),
+            new Pose(13, 84, Math.toRadians(180)),
+            new Pose(39,12, Math.toRadians(180))
     };
     public Pose[] positionsRedFar = {
             new Pose(97, 35, 0),
             new Pose(125, 36, 0),
             new Pose(83, 55, 0),
-            new Pose(125, 60, Math.toRadians(0))
+            new Pose(125, 60, Math.toRadians(0)),
+            new Pose(97, 84, Math.toRadians(0)),
+            new Pose(130, 84, Math.toRadians(0)),
+            new Pose(114, 12, Math.toRadians(0))
     };
     public Pose[] positionsBlueNear = {
             new Pose(48, 84, Math.toRadians(180)),
             new Pose(15, 84, Math.toRadians(180)),
             new Pose(58, 63, Math.toRadians(180)),
-            new Pose(14, 60, Math.toRadians(180))};
+            new Pose(14, 60, Math.toRadians(180)),
+            new Pose(40,35, Math.toRadians(180)),
+            new Pose(10,35, Math.toRadians(180)),
+            new Pose(24, 84, Math.toRadians(180))
+    };
     public Pose[] positionsRedNear = {
             new Pose(106, 84, 0),
             new Pose(125, 84, 0),
             new Pose(125, 59, 0),
-            new Pose(125, 60, 0)
+            new Pose(125, 60, 0),
+            new Pose(97, 35, 0),
+            new Pose(125, 36, 0),
+            new Pose(120, 90, 0)
     };
-
     private Follower robot;
-    public Pose[] positions;
     public int posIndex = 0;
-    public boolean ResetShoot = false;
     private PathChain forwards;
-    public Path scorePreload = null;
     public Pose robotPos = null;
     private TelemetryManager manager;
     public double integral = 0;
@@ -93,14 +100,6 @@ public class followPathAuto extends LinearOpMode {
     PartsOfAuto partsOfAuto = PartsOfAuto.shoot;
     public Pose lastPose;
     public int numberOfArtifacts = 2;
-
-    public void waitForButton () {
-        while (gamepad1.a || gamepad1.b) {
-            sleep(10);
-        }
-    }
-
-    //PID stuff
     public double outtakePID(double targetSpeed){
         error = targetSpeed - outtakeLeft.getVelocity();
         integral += error;
@@ -122,9 +121,26 @@ public class followPathAuto extends LinearOpMode {
         }
         return targetSpeed;
     }
-
-    //Init functions
-    //red Or blue start pos
+    public void intake (){
+        intakeLeft.setPower(1);
+        intakeRight.setPower(1);
+    }
+    public void turnOffIntake () {
+        intakeLeft.setPower(0);
+        intakeRight.setPower(0);
+    }
+    public void outtake () {
+        timer.resetTimer();
+        outtakeGate.setPosition(0.35);
+        while (numberOfArtifacts > 0 && opModeIsActive()) {
+            intake();
+            outtakeRight.setPower(outtakeLeft.getPower());
+            if (timer.getElapsedTimeSeconds() >= 1) {
+                turnOffIntake();
+                numberOfArtifacts = 0;
+            }
+        }
+    }
     public void redOrBlue () {
         if (colorSet) {
             return;
@@ -148,8 +164,6 @@ public class followPathAuto extends LinearOpMode {
             waitForButton();
         }
     }
-
-    //near or far start pos
     public void setStartPos () {
         if (!colorSet) {
             return;
@@ -185,40 +199,17 @@ public class followPathAuto extends LinearOpMode {
             isStartSet = true;
         }
     }
-
-    //mechanisums functions
-    //intake
-    public void intake (){
-        intakeLeft.setPower(1);
-        intakeRight.setPower(1);
-    }
-    public void turnOffIntake () {
-        intakeLeft.setPower(0);
-        intakeRight.setPower(0);
-    }
-
-    //outtake
-    public void outtake () {
-        timer.resetTimer();
-        outtakeGate.setPosition(0.35);
-        while (numberOfArtifacts > 0 && opModeIsActive()) {
-            intake();
-            outtakeRight.setPower(outtakeLeft.getPower());
-            if (timer.getElapsedTimeSeconds() >= 1) {
-                turnOffIntake();
-                numberOfArtifacts = 0;
-            }
+    public void waitForButton () {
+        while (gamepad1.a || gamepad1.b) {
+            sleep(10);
         }
     }
-
-    //pedro pathing
-    //go to a spot
-    public void goToPos (Pose endPose) {
+    public void goToPos (Pose endPose, boolean holdEnd) {
         forwards = robot.pathBuilder()
                 .addPath(new BezierLine(lastPose, endPose))
                 .setLinearHeadingInterpolation(lastPose.getHeading(), endPose.getHeading())
                 .build();
-        robot.followPath(forwards, 0.5, true);
+        robot.followPath(forwards, 0.5, holdEnd);
         robot.update();
         while (robot.isBusy() && opModeIsActive()) {
             outtakeRight.setPower(outtakeLeft.getPower());
@@ -226,13 +217,11 @@ public class followPathAuto extends LinearOpMode {
         }
         lastPose = endPose;
     }
-
-    //find the next pos in the array
     public Pose getNextPose () {
         Pose p;
         if (color.equals("red")) {
             if (isFar) {
-                p = positionsRedFar [posIndex];
+                p = positionsRedFar[posIndex];
             }  else  {
                 p = positionsRedNear [posIndex];
             }
@@ -247,13 +236,23 @@ public class followPathAuto extends LinearOpMode {
         posIndex++;
         return p;
     }
-
-    //return the pos you are going to next
-    public Pose goToNextPose (Pose nextPos) {
-        goToPos(nextPos);
+    public Pose goToNextPose (Pose nextPos, boolean holdEnd) {
+        telemetry.addLine("here");
+        telemetry.update();
+        telemetry.addData("p", nextPos);
+        telemetry.update();
+        goToPos(nextPos, holdEnd);
+        telemetry.addLine("we somehow got here");
+        telemetry.update();
         return nextPos;
     }
 
+    //set start pos
+    //start by going to shoot pos
+    //shoot 2 balls
+    //pickup balls
+    //go to shoot pos
+    //pickup balls
     public void runOpMode (){
 
         intakeLeft = hardwareMap.get(DcMotor.class, "IntakeLeft");
@@ -308,18 +307,18 @@ public class followPathAuto extends LinearOpMode {
             }
             outtakeGate.setPosition(0.7);
             if (partsOfAuto == PartsOfAuto.move && !robot.isBusy() && Math.abs(outtakeLeft.getVelocity() - speedPID) < 20) {
-                goToNextPose(getNextPose());
+                goToNextPose(getNextPose(), true);
                 partsOfAuto = PartsOfAuto.intake;
 
             } else if (partsOfAuto == PartsOfAuto.intake && !robot.isBusy() && Math.abs(outtakeLeft.getVelocity() - speedPID) < 20) {
                 intake();
-                goToNextPose(getNextPose());
+                goToNextPose(getNextPose(), true);
                 numberOfArtifacts = 3;
                 partsOfAuto = PartsOfAuto.shoot;
 
             } else if (partsOfAuto == PartsOfAuto.shoot && !robot.isBusy() && Math.abs(outtakeLeft.getVelocity() - speedPID) < 20) {
                 turnOffIntake();
-                goToNextPose(shootPos);
+                goToNextPose(shootPos, false);
                 outtake();
                 partsOfAuto = PartsOfAuto.move;
             }
