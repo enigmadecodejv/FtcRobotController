@@ -34,6 +34,7 @@ public class PIOuttake {
     public static double closeSpeed = 1200;
     public double speedPID = closeSpeed;
     public Servo LED;
+    public static double derivativeThreshhold = 0;
 
     public PIOuttake(HardwareMap hardwareMap, Gamepad gamepad1, Gamepad gamepad2) {
         this.gamepad1 = gamepad1;
@@ -52,9 +53,12 @@ public class PIOuttake {
         error = targetSpeed - outtakeMotor.getVelocity();
         integral += error;
         integral2 += error;
-        timer += 1;
         if (lastError != 33778) {
-            derivative = (error - lastError) / timer;
+            derivative = (error - lastError) / (System.currentTimeMillis() - timer);
+        }
+        timer = System.currentTimeMillis();
+        if (derivative * td <= derivativeThreshhold){
+            derivative = 0;
         }
         lastError = error;
         if (ti == 0){
@@ -82,9 +86,9 @@ public class PIOuttake {
         outtakeMotor.setPower(targetPower);
         outtakeMotor2.setPower(targetPower);
         if (currentGamepad1.left_trigger > 0.25) {
-            outtakeServo.setPosition(0.35);
+            outtakeServo.setPosition(0.2);
         } else {
-            outtakeServo.setPosition(0.7);
+            outtakeServo.setPosition(0.3);
         }
     }
     public void outtake() {
@@ -93,7 +97,7 @@ public class PIOuttake {
         if (currentGamepad1.left_trigger > 0.25) {
             outtakeServo.setPosition(0.35);
         } else {
-            outtakeServo.setPosition(0.7);
+            outtakeServo.setPosition(0.5);
         }
         if (currentGamepad1.a) {
             shouldTheOutakeMotorsBeOnHighPower = false;

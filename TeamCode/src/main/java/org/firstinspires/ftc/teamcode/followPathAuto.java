@@ -5,7 +5,6 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.Path;
-import com.pedropathing.paths.PathBuilder;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -25,7 +24,6 @@ import com.bylazar.telemetry.TelemetryManager;
 public class followPathAuto extends LinearOpMode {
     DcMotor intakeLeft;
     DcMotor intakeRight;
-    public int tickNum = 0;
     public boolean isFar;
     public Timer timer;
     DcMotor outtakeRight;
@@ -76,11 +74,8 @@ public class followPathAuto extends LinearOpMode {
             new Pose(120, 90, 0)
     };
     private Follower robot;
-    public Pose[] positions;
     public int posIndex = 0;
-    public boolean ResetShoot = false;
     private PathChain forwards;
-    public Path scorePreload = null;
     public Pose robotPos = null;
     private TelemetryManager manager;
     public double integral = 0;
@@ -97,7 +92,6 @@ public class followPathAuto extends LinearOpMode {
     public static double closeSpeed = 1150;
     public double speedPID = closeSpeed;
     public double targetPower;
-    boolean isDone = false;
     enum PartsOfAuto {
         move,
         intake,
@@ -210,12 +204,12 @@ public class followPathAuto extends LinearOpMode {
             sleep(10);
         }
     }
-    public void goToPos (Pose endPose) {
+    public void goToPos (Pose endPose, boolean holdEnd) {
         forwards = robot.pathBuilder()
                 .addPath(new BezierLine(lastPose, endPose))
                 .setLinearHeadingInterpolation(lastPose.getHeading(), endPose.getHeading())
                 .build();
-        robot.followPath(forwards, 0.5, true);
+        robot.followPath(forwards, 0.5, holdEnd);
         robot.update();
         while (robot.isBusy() && opModeIsActive()) {
             outtakeRight.setPower(outtakeLeft.getPower());
@@ -242,12 +236,12 @@ public class followPathAuto extends LinearOpMode {
         posIndex++;
         return p;
     }
-    public Pose goToNextPose (Pose nextPos) {
+    public Pose goToNextPose (Pose nextPos, boolean holdEnd) {
         telemetry.addLine("here");
         telemetry.update();
         telemetry.addData("p", nextPos);
         telemetry.update();
-        goToPos(nextPos);
+        goToPos(nextPos, holdEnd);
         telemetry.addLine("we somehow got here");
         telemetry.update();
         return nextPos;
@@ -313,18 +307,18 @@ public class followPathAuto extends LinearOpMode {
             }
             outtakeGate.setPosition(0.7);
             if (partsOfAuto == PartsOfAuto.move && !robot.isBusy() && Math.abs(outtakeLeft.getVelocity() - speedPID) < 20) {
-                goToNextPose(getNextPose());
+                goToNextPose(getNextPose(), true);
                 partsOfAuto = PartsOfAuto.intake;
 
             } else if (partsOfAuto == PartsOfAuto.intake && !robot.isBusy() && Math.abs(outtakeLeft.getVelocity() - speedPID) < 20) {
                 intake();
-                goToNextPose(getNextPose());
+                goToNextPose(getNextPose(), true);
                 numberOfArtifacts = 3;
                 partsOfAuto = PartsOfAuto.shoot;
 
             } else if (partsOfAuto == PartsOfAuto.shoot && !robot.isBusy() && Math.abs(outtakeLeft.getVelocity() - speedPID) < 20) {
                 turnOffIntake();
-                goToNextPose(shootPos);
+                goToNextPose(shootPos, false);
                 outtake();
                 partsOfAuto = PartsOfAuto.move;
             }
