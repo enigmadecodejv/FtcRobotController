@@ -5,7 +5,6 @@ import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
 import com.pedropathing.paths.Path;
-import com.pedropathing.paths.PathBuilder;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
@@ -20,9 +19,11 @@ import org.firstinspires.ftc.teamcode.Outtake.PIOuttake;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
+import java.util.ArrayList;
 @Configurable
-@Autonomous(name="FollowPathAuto", group="Enigma")
-public class followPathAuto extends LinearOpMode {
+@Autonomous(name="autoMaker", group="Enigma")
+public class autoMaker extends LinearOpMode {
+    ArrayList<String> commands = new ArrayList<String>();
     DcMotor intakeLeft;
     DcMotor intakeRight;
     public int tickNum = 0;
@@ -64,8 +65,9 @@ public class followPathAuto extends LinearOpMode {
     };
 
     private Follower robot;
-    public Pose[] positions;
+    ArrayList<Pose> positions = new ArrayList<Pose>();
     public int posIndex = 0;
+    public int commandIndex = 0;
     public boolean ResetShoot = false;
     private PathChain forwards;
     public Path scorePreload = null;
@@ -186,11 +188,45 @@ public class followPathAuto extends LinearOpMode {
         }
     }
 
+    public void commandInput(Pose[] poses, Pose outtakePos) {
+        if (gamepad2.dpad_up) {
+            positions.add(poses[0]);
+            positions.add(poses[1]);
+            commands.add("far artifacts");
+        } else if (gamepad2.dpad_left || gamepad2.dpad_right) {
+            positions.add(poses[2]);
+            positions.add(poses[3]);
+            commands.add("middle artifacts");
+        } else if (gamepad2.dpad_down) {
+            positions.add(poses[4]);
+            positions.add(poses[5]);
+            commands.add("near artifacts");
+        } else if (gamepad2.left_trigger > 0.25 || gamepad2.right_trigger >= 0.25) {
+            commands.add("outtake");
+        } else if (gamepad2.left_bumper || gamepad2.right_bumper) {
+            positions.add(poses[6]);
+            commands.add("leve");
+        }
+        shootPos = outtakePos;
+    }
+
     //mechanisums functions
     //intake
     public void intake (){
-        intakeLeft.setPower(1);
-        intakeRight.setPower(1);
+        if (
+            !robot.isBusy()
+            && Math.abs(outtakeLeft.getVelocity() - speedPID) < 20
+            && (commands.get(commandIndex).equals("far artifacts")
+            || commands.get(commandIndex).equals("middle artifacts")
+            || commands.get(commandIndex).equals("near artifacts"))
+        ) {
+
+            goToPos(positions.get(posIndex));
+            intakeLeft.setPower(1);
+            intakeRight.setPower(1);
+            goToPos(positions.get(posIndex));
+            numberOfArtifacts = 3;
+        }
     }
     public void turnOffIntake () {
         intakeLeft.setPower(0);
@@ -199,15 +235,26 @@ public class followPathAuto extends LinearOpMode {
 
     //outtake
     public void outtake () {
-        timer.resetTimer();
-        outtakeGate.setPosition(0.35);
-        while (numberOfArtifacts > 0 && opModeIsActive()) {
-            intake();
-            outtakeRight.setPower(outtakeLeft.getPower());
-            if (timer.getElapsedTimeSeconds() >= 1) {
-                turnOffIntake();
-                numberOfArtifacts = 0;
+        if (!robot.isBusy() && Math.abs(outtakeLeft.getVelocity() - speedPID) < 20 && commands.get(commandIndex).equals("outtake")) {
+            turnOffIntake();
+            goToPos(shootPos);
+            timer.resetTimer();
+            outtakeGate.setPosition(0.35);
+            while (numberOfArtifacts > 0 && opModeIsActive()) {
+                intakeLeft.setPower(1);
+                intakeRight.setPower(1);
+                outtakeRight.setPower(outtakeLeft.getPower());
+                if (timer.getElapsedTimeSeconds() >= 1) {
+                    turnOffIntake();
+                    numberOfArtifacts = 0;
+                }
             }
+        }
+    }
+
+    public void leve() {
+        if (!robot.isBusy() && Math.abs(outtakeLeft.getVelocity() - speedPID) < 20 && commands.get(commandIndex).equals("leve")) {
+            goToPos(positions.get(posIndex));
         }
     }
 
@@ -224,34 +271,8 @@ public class followPathAuto extends LinearOpMode {
             outtakeRight.setPower(outtakeLeft.getPower());
             robot.update();
         }
-        lastPose = endPose;
-    }
-
-    //find the next pos in the array
-    public Pose getNextPose () {
-        Pose p;
-        if (color.equals("red")) {
-            if (isFar) {
-                p = positionsRedFar [posIndex];
-            }  else  {
-                p = positionsRedNear [posIndex];
-            }
-        } else  {
-            if (isFar) {
-                p = positionsBlueFar[posIndex];
-            } else {
-                p = positionsBlueNear[posIndex];
-
-            }
-        }
         posIndex++;
-        return p;
-    }
-
-    //return the pos you are going to next
-    public Pose goToNextPose (Pose nextPos) {
-        goToPos(nextPos);
-        return nextPos;
+        lastPose = endPose;
     }
 
     public void runOpMode (){
@@ -279,6 +300,14 @@ public class followPathAuto extends LinearOpMode {
             if (colorSet && isStartSet) {
                 telemetry.addData("color", color);
                 telemetry.addData("isFar is", isFar);
+                if (isRed) {
+                    commandInput(positionsRedFar, shootPos);
+                } else {
+                    commandInput(positionsBlueFar, shootPos);
+                }
+                for (int i = 0; i < commands.size(); i++) {
+                    telemetry.addLine(commands.get(i));
+                }
             }
             telemetry.update();
         }
@@ -307,22 +336,9 @@ public class followPathAuto extends LinearOpMode {
                 manager.addData("Integral/ti", integral / ti);
             }
             outtakeGate.setPosition(0.7);
-            if (partsOfAuto == PartsOfAuto.move && !robot.isBusy() && Math.abs(outtakeLeft.getVelocity() - speedPID) < 20) {
-                goToNextPose(getNextPose());
-                partsOfAuto = PartsOfAuto.intake;
-
-            } else if (partsOfAuto == PartsOfAuto.intake && !robot.isBusy() && Math.abs(outtakeLeft.getVelocity() - speedPID) < 20) {
-                intake();
-                goToNextPose(getNextPose());
-                numberOfArtifacts = 3;
-                partsOfAuto = PartsOfAuto.shoot;
-
-            } else if (partsOfAuto == PartsOfAuto.shoot && !robot.isBusy() && Math.abs(outtakeLeft.getVelocity() - speedPID) < 20) {
-                turnOffIntake();
-                goToNextPose(shootPos);
-                outtake();
-                partsOfAuto = PartsOfAuto.move;
-            }
+            outtake();
+            intake();
+            leve();
             manager.update();
         }
     }
