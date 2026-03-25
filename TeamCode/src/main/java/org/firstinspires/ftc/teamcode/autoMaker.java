@@ -103,7 +103,7 @@ public class autoMaker extends LinearOpMode {
     }
 
     //PID stuff
-    public double outtakePID(double targetSpeed){
+    public double outtakePID(double targetSpeed) {
         error = targetSpeed - outtakeLeft.getVelocity();
         integral += error;
         integral2 += error;
@@ -158,7 +158,7 @@ public class autoMaker extends LinearOpMode {
         } else if (isStartSet) {
             return;
         }
-        telemetry.addLine("looking for starting pos press a for nearside, b for farside");
+        telemetry.addLine("looking for starting pos:\npress a for nearside, b for farside");
         if (color.equals("blue")) {
             if (gamepad1.b) {
                 robotPos = new Pose(56, 8, Math.toRadians(270));
@@ -205,12 +205,12 @@ public class autoMaker extends LinearOpMode {
             commands.add("outtake");
         } else if (gamepad2.left_bumper || gamepad2.right_bumper) {
             positions.add(poses[6]);
-            commands.add("leve");
+            commands.add("leave");
         }
         shootPos = outtakePos;
     }
 
-    //mechanisums functions
+    //mechanisms functions
     //intake
     public void intake (){
         if (
@@ -252,7 +252,7 @@ public class autoMaker extends LinearOpMode {
         }
     }
 
-    public void leve() {
+    public void leave() {
         if (!robot.isBusy() && Math.abs(outtakeLeft.getVelocity() - speedPID) < 20 && commands.get(commandIndex).equals("leve")) {
             goToPos(positions.get(posIndex));
         }
@@ -338,7 +338,7 @@ public class autoMaker extends LinearOpMode {
             outtakeGate.setPosition(0.7);
             outtake();
             intake();
-            leve();
+            leave();
             manager.update();
         }
     }
