@@ -4,9 +4,9 @@ import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
 import com.pedropathing.geometry.Pose;
-import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 import com.pedropathing.util.Timer;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -22,20 +22,23 @@ import com.bylazar.telemetry.TelemetryManager;
 @Configurable
 @Autonomous(name="FollowPathAuto", group="Enigma")
 public class followPathAuto extends LinearOpMode {
+    public DcMotor leftFrontDrive;
+    public DcMotor leftBackDrive;
+    public DcMotor rightFrontDrive;
+    public DcMotor rightBackDrive;
     DcMotor intakeLeft;
     DcMotor intakeRight;
+    Limelight3A limelight;
     public boolean isFar;
     public Timer timer;
     DcMotor outtakeRight;
     DcMotorEx outtakeLeft;
     Servo outtakeGate;
-    PIOuttake outtakeCode;
+    LimelightRunner runOLime;
     public boolean isRed = false;
     public String color = "blue";
     public boolean colorSet = false;
     public boolean isStartSet = false;
-    public double timer2;
-    public boolean timerSet = true;
     public Pose shootPos;
     public Pose[] positionsBlueFar = {
             new Pose(40,35, Math.toRadians(180)),
@@ -80,18 +83,21 @@ public class followPathAuto extends LinearOpMode {
     private TelemetryManager manager;
     public double integral = 0;
     public double derivative;
-    public double motorSpeed;
     public double error;
     public double timerPI;
     public double lastError = 33778;
     public static double kp = 0.01;
     public static double ti = 60;
     public static double td = 0;
+    public static double kp_DX = 0.05;
     public double integral2 = 0;
     public static double farSpeed = 1410;
     public static double closeSpeed = 1150;
     public double speedPID = closeSpeed;
     public double targetPower;
+    public int goalTag;
+    public double DX;
+    public int loopNum = 0;
     enum PartsOfAuto {
         move,
         intake,
@@ -99,14 +105,14 @@ public class followPathAuto extends LinearOpMode {
     }
     PartsOfAuto partsOfAuto = PartsOfAuto.shoot;
     public Pose lastPose;
-    public int numberOfArtifacts = 2;
+    public int numberOfArtifacts = 3;
     public double outtakePID(double targetSpeed){
         error = targetSpeed - outtakeLeft.getVelocity();
         integral += error;
         integral2 += error;
         timerPI += 1;
         if (lastError != 33778) {
-            derivative = (error - lastError) / timerPI;
+            derivative = (error - lastError) /*/ timerPI*/;
         }
         lastError = error;
         if (ti == 0){
@@ -130,14 +136,34 @@ public class followPathAuto extends LinearOpMode {
         intakeRight.setPower(0);
     }
     public void outtake () {
+        outtakeGate.setPosition(0.2);
         timer.resetTimer();
-        outtakeGate.setPosition(0.35);
         while (numberOfArtifacts > 0 && opModeIsActive()) {
-            intake();
-            outtakeRight.setPower(outtakeLeft.getPower());
-            if (timer.getElapsedTimeSeconds() >= 1) {
+
+            robot.update();
+            DX = runOLime.getDX(goalTag);
+            if (DX != DX){
+                telemetry.addLine("DX is NaN");
+            }
+            if (Math.abs(DX) > 1.0) {
+                double turn = DX * kp_DX;
+                if (Math.abs(turn) > 0.75){
+                    turn = 0.75 * turn/Math.abs(turn);
+                }
+                leftFrontDrive.setPower(+turn);
+                leftBackDrive.setPower(+turn);
+                rightFrontDrive.setPower(-turn);
+                rightBackDrive.setPower(-turn);
                 turnOffIntake();
-                numberOfArtifacts = 0;
+                timer.resetTimer();
+            } else if (!robot.isBusy()) {
+                intake();
+                outtakeRight.setPower(outtakeLeft.getPower());
+                if (timer.getElapsedTimeSeconds() >= 1) {
+                    telemetry.addLine("yay");
+                    turnOffIntake();
+                    numberOfArtifacts = 0;
+                }
             }
         }
     }
@@ -149,12 +175,16 @@ public class followPathAuto extends LinearOpMode {
             isRed = true;
             colorSet = true;
             color = "red";
+            goalTag = 24;
+            runOLime.switchPipeline(0);
             //positions = positionsBlue;
         }
         if (gamepad1.b) {
             isRed = false;
             colorSet = true;
             color = "blue";
+            goalTag = 20;
+            runOLime.switchPipeline(1);
             //positions = positionsRed;
         }
         if (!colorSet) {
@@ -237,13 +267,7 @@ public class followPathAuto extends LinearOpMode {
         return p;
     }
     public Pose goToNextPose (Pose nextPos, boolean holdEnd) {
-        telemetry.addLine("here");
-        telemetry.update();
-        telemetry.addData("p", nextPos);
-        telemetry.update();
         goToPos(nextPos, holdEnd);
-        telemetry.addLine("we somehow got here");
-        telemetry.update();
         return nextPos;
     }
 
@@ -254,7 +278,12 @@ public class followPathAuto extends LinearOpMode {
     //go to shoot pos
     //pickup balls
     public void runOpMode (){
-
+        leftFrontDrive = hardwareMap.get(DcMotor.class, "FrontLeft");
+        leftBackDrive = hardwareMap.get(DcMotor.class, "RearLeft");
+        rightFrontDrive = hardwareMap.get(DcMotor.class, "FrontRight");
+        rightBackDrive = hardwareMap.get(DcMotor.class, "RearRight");
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
+        runOLime = new LimelightRunner(limelight);
         intakeLeft = hardwareMap.get(DcMotor.class, "IntakeLeft");
         robot = Constants.createFollower(hardwareMap);
         intakeRight = hardwareMap.get(DcMotor.class, "IntakeRight");
@@ -288,7 +317,6 @@ public class followPathAuto extends LinearOpMode {
         }
         outtakeLeft.setVelocity(speedPID);
         waitForStart();
-        Pose l;
         while (opModeIsActive()) {
             PIDCoefficients pidCoefficients = outtakeLeft.getPIDCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
             pidCoefficients.p = kp;
@@ -305,7 +333,7 @@ public class followPathAuto extends LinearOpMode {
             }else {
                 manager.addData("Integral/ti", integral / ti);
             }
-            outtakeGate.setPosition(0.7);
+            outtakeGate.setPosition(0.3);
             if (partsOfAuto == PartsOfAuto.move && !robot.isBusy() && Math.abs(outtakeLeft.getVelocity() - speedPID) < 20) {
                 goToNextPose(getNextPose(), true);
                 partsOfAuto = PartsOfAuto.intake;
@@ -323,6 +351,9 @@ public class followPathAuto extends LinearOpMode {
                 partsOfAuto = PartsOfAuto.move;
             }
             manager.update();
+            if (loopNum < 0) {
+                telemetry.addData("loopNum", loopNum);
+            }
         }
     }
 }

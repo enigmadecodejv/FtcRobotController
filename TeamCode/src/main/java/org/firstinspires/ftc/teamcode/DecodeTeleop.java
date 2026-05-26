@@ -1,25 +1,18 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.bylazar.configurables.annotations.Configurable;
-import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.util.Range;
-
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose3D;
 import org.firstinspires.ftc.teamcode.Drive.decodeDriveCode;
 import org.firstinspires.ftc.teamcode.Outtake.PIOuttake;
 import org.firstinspires.ftc.teamcode.intake.decodeIntake;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
-
 import com.qualcomm.hardware.limelightvision.Limelight3A;
-import com.qualcomm.hardware.limelightvision.LLResult;
-import com.qualcomm.hardware.limelightvision.LLResultTypes;
-
 @Configurable
 @TeleOp(name="DecodeTeleop", group="Enigma")
 public class DecodeTeleop extends LinearOpMode {
@@ -37,17 +30,11 @@ public class DecodeTeleop extends LinearOpMode {
     public double DIST = 0;
     public double kP_TURN = 0.05;
     public double MAXTURN = 0.75;
-    public Pose aprilTagBlue = new Pose(16, 131, /*degrees*/-45);
-    public Pose aprilTagRed = new Pose(128, 130, /*degrees*/45);
-    public cart2D shootTargetRed = new cart2D(132,136);
-    public cart2D shootTargetBlue = new cart2D(12,135);
-    public cart2D difference;
-    public Pose targetTagPose;
-    public double aprilShotDist = 3;
-    public double limeDist = 6.5;
+    //public Pose aprilTagBlue = new Pose(16, 131, /*degrees*/-45);
+    //public Pose aprilTagRed = new Pose(128, 130, /*degrees*/45);
     private void setTurnInPlace(double turn) {
-        if (Math.abs(turn) > 0.75){
-            turn = 0.75 * turn/Math.abs(turn);
+        if (Math.abs(turn) > MAXTURN){
+            turn = MAXTURN * turn/Math.abs(turn);
         }
         driveCode.leftFrontDrive.setPower(+turn);
         driveCode.leftBackDrive.setPower(+turn);
@@ -59,14 +46,10 @@ public class DecodeTeleop extends LinearOpMode {
         if (gamepad2.x) {
             //bluetag
             goalTag = 20;
-            limeDist = limeDist * 1;
-            targetTagPose = aprilTagBlue;
             runOLime.switchPipeline(1);//Blue goal pipeline
         } else if (gamepad2.b){
             //redtag
             goalTag = 24;
-            limeDist = limeDist * 1;
-            targetTagPose = aprilTagRed;
             runOLime.switchPipeline(0);//Red goal pipeline
         }
         if (goalTag == 20) {
@@ -100,6 +83,20 @@ public class DecodeTeleop extends LinearOpMode {
         manager.addData("derivative*tD", outtakeCode.derivative * PIOuttake.td);
         telemetry.addData("DX", DX);
         telemetry.addData("DIST", DIST);
+        telemetry.addData("OuttakeMotor Current", outtakeCode.outtakeMotor.getCurrent(CurrentUnit.MILLIAMPS));
+        telemetry.addData("OuttakeMotor Power", outtakeCode.outtakeMotor.getPower());
+        telemetry.addData("OuttakeMotor2 Power", outtakeCode.outtakeMotor.getPower());
+        telemetry.addData("FrontLeft drive power", driveCode.leftFrontDrive.getPower());
+        telemetry.addData("leftBack drive power", driveCode.leftBackDrive.getPower());
+        telemetry.addData("rightFront drive power", driveCode.rightFrontDrive.getPower());
+        telemetry.addData("rightBack drive power", driveCode.rightBackDrive.getPower());
+        manager.addData("OuttakeMotor Current", outtakeCode.outtakeMotor.getCurrent(CurrentUnit.MILLIAMPS));
+        manager.addData("OuttakeMotor Power", outtakeCode.outtakeMotor.getPower());
+        manager.addData("OuttakeMotor2 Power", outtakeCode.outtakeMotor.getPower());
+        manager.addData("FrontLeft drive power", driveCode.leftFrontDrive.getPower());
+        manager.addData("leftBack drive power", driveCode.leftBackDrive.getPower());
+        manager.addData("rightFront drive power", driveCode.rightFrontDrive.getPower());
+        manager.addData("rightBack drive power", driveCode.rightBackDrive.getPower());
 
         if (PIOuttake.ti == 0){
             manager.addData("Integral/ti", 0);

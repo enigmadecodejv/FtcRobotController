@@ -1,9 +1,7 @@
 package org.firstinspires.ftc.teamcode.Drive;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
-import com.qualcomm.robotcore.hardware.HardwareMap;
 
 public class decodeDriveCode {
     //define gamepad1
@@ -66,10 +64,6 @@ public class decodeDriveCode {
     }
 
     public boolean areWheelsMoving(){
-        if (leftFrontDrive.getPower() == 0 && rightFrontDrive.getPower() == 0){
-            return false;
-        }else {
-            return true;
-        }
+        return leftFrontDrive.getPower() != 0 || rightFrontDrive.getPower() != 0;
     }
 }

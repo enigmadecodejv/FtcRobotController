@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+
 @Configurable
 public class PIOuttake {
     public Gamepad gamepad1;
@@ -22,7 +23,6 @@ public class PIOuttake {
     public boolean zeroPower = false;
     public double integral = 0;
     public double derivative;
-    public double motorSpeed;
     public double error;
     public double timer;
     public double lastError = 33778;
@@ -30,11 +30,12 @@ public class PIOuttake {
     public static double ti = 120;
     public static double td = 0;
     public double integral2 = 0;
-    public static double farSpeed = 1425;
+    public static double farSpeed = 0; // for now, real speed is 1425
     public static double closeSpeed = 1200;
     public double speedPID = closeSpeed;
     public Servo LED;
     public static double derivativeThreshhold = 0;
+    public static double outtakeServoPosition = 0.0;
 
     public PIOuttake(HardwareMap hardwareMap, Gamepad gamepad1, Gamepad gamepad2) {
         this.gamepad1 = gamepad1;
@@ -54,7 +55,7 @@ public class PIOuttake {
         integral += error;
         integral2 += error;
         if (lastError != 33778) {
-            derivative = (error - lastError) / (System.currentTimeMillis() - timer);
+            derivative = (error - lastError) /*/ (System.currentTimeMillis() - timer)*/;
         }
         timer = System.currentTimeMillis();
         if (derivative * td <= derivativeThreshhold){
@@ -78,17 +79,17 @@ public class PIOuttake {
             LED.setPosition(0.510);
         }
         double targetPower = outtakePID(speedPID);
-        if(targetPower > 1){
-            targetPower = 1;
-        }else if (targetPower < -1){
-            targetPower = -1;
+        if(targetPower > 0.8){
+            targetPower = 0.8;
+        }else if (targetPower < -0.8){
+            targetPower = -0.8;
         }
         outtakeMotor.setPower(targetPower);
         outtakeMotor2.setPower(targetPower);
         if (currentGamepad1.left_trigger > 0.25) {
-            outtakeServo.setPosition(0.2);
+            outtakeServo.setPosition(0.0);
         } else {
-            outtakeServo.setPosition(0.3);
+            outtakeServo.setPosition(outtakeServoPosition);
         }
     }
     public void outtake() {
