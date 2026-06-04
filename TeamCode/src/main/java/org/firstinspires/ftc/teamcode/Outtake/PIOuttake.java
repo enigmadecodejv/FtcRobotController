@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.Outtake;
 import com.bylazar.configurables.annotations.Configurable;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -24,18 +25,19 @@ public class PIOuttake {
     public double integral = 0;
     public double derivative;
     public double error;
-    public double timer;
+    public double timer = 0;
     public double lastError = 33778;
-    public static double kp = 0.01;
-    public static double ti = 120;
+    public static double kp = 0.015;
+    public static double ti = 30;
     public static double td = 0;
     public double integral2 = 0;
-    public static double farSpeed = 0; // for now, real speed is 1425
+    public static double farSpeed = 1475; // for now, real speed is 1425
     public static double closeSpeed = 1200;
     public double speedPID = closeSpeed;
     public Servo LED;
     public static double derivativeThreshhold = 0;
-    public static double outtakeServoPosition = 0.0;
+    public static double outtakeServoOpenPosition = 0.0;
+    public static double outtakeServoClosedPosition = 0.2;
 
     public PIOuttake(HardwareMap hardwareMap, Gamepad gamepad1, Gamepad gamepad2) {
         this.gamepad1 = gamepad1;
@@ -44,6 +46,7 @@ public class PIOuttake {
         outtakeMotor = hardwareMap.get(DcMotorEx.class, "OuttakeLeft");
         outtakeMotor2 = hardwareMap.get(DcMotor.class, "OuttakeRight");
         outtakeMotor.setDirection(DcMotor.Direction.REVERSE);
+        outtakeMotor2.setDirection(DcMotorSimple.Direction.REVERSE);
         outtakeServo = hardwareMap.get(Servo.class, "OuttakeGate");
         LED = hardwareMap.get(Servo.class, "RGBLightIndicator");
 
@@ -55,10 +58,10 @@ public class PIOuttake {
         integral += error;
         integral2 += error;
         if (lastError != 33778) {
-            derivative = (error - lastError) /*/ (System.currentTimeMillis() - timer)*/;
+            derivative = (error - lastError) / (System.currentTimeMillis() - timer);
         }
         timer = System.currentTimeMillis();
-        if (derivative * td <= derivativeThreshhold){
+        if (derivative * td <= derivativeThreshhold) {
             derivative = 0;
         }
         lastError = error;
@@ -87,9 +90,9 @@ public class PIOuttake {
         outtakeMotor.setPower(targetPower);
         outtakeMotor2.setPower(targetPower);
         if (currentGamepad1.left_trigger > 0.25) {
-            outtakeServo.setPosition(0.0);
+            outtakeServo.setPosition(outtakeServoOpenPosition);
         } else {
-            outtakeServo.setPosition(outtakeServoPosition);
+            outtakeServo.setPosition(outtakeServoClosedPosition);
         }
     }
     public void outtake() {

@@ -1,18 +1,25 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.bylazar.configurables.annotations.Configurable;
+import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
+import org.firstinspires.ftc.teamcode.Drive.NaNTurnBehavior;
 import org.firstinspires.ftc.teamcode.Drive.decodeDriveCode;
 import org.firstinspires.ftc.teamcode.Outtake.PIOuttake;
 import org.firstinspires.ftc.teamcode.intake.decodeIntake;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+
 @Configurable
 @TeleOp(name="DecodeTeleop", group="Enigma")
 public class DecodeTeleop extends LinearOpMode {
@@ -28,7 +35,9 @@ public class DecodeTeleop extends LinearOpMode {
     public int goalTag = 20;
     public double DX = 0;
     public double DIST = 0;
-    public double kP_TURN = 0.05;
+    public static double kP_TURN = 0.03;
+    public static double tI_TURN = 960;
+    public double integralTurn = 0;
     public double MAXTURN = 0.75;
     //public Pose aprilTagBlue = new Pose(16, 131, /*degrees*/-45);
     //public Pose aprilTagRed = new Pose(128, 130, /*degrees*/45);
@@ -41,16 +50,27 @@ public class DecodeTeleop extends LinearOpMode {
         driveCode.rightFrontDrive.setPower(-turn);
         driveCode.rightBackDrive.setPower(-turn);
     }
-
+    private void localizePinpoint(Pose robotPoseInMeters){
+        if (robotPoseInMeters != null) {
+            pinpoint.setPosition(new Pose2D(DistanceUnit.METER, robotPoseInMeters.getX(), robotPoseInMeters.getY(), AngleUnit.RADIANS, robotPoseInMeters.getHeading()));
+            pinpoint.setHeading(robotPoseInMeters.getHeading(), AngleUnit.RADIANS);
+        }
+    }
     private void mainLoop() {
+        if (gamepad2.left_trigger > 0.25){
+            Pose limelightResult = runOLime.getBotPose();
+            if (limelightResult != null){
+                localizePinpoint(limelightResult);
+            }
+        }
         if (gamepad2.x) {
             //bluetag
             goalTag = 20;
-            runOLime.switchPipeline(1);//Blue goal pipeline
+            runOLime.switchPipeline(1);//Blue goal pipeline is 1
         } else if (gamepad2.b){
             //redtag
             goalTag = 24;
-            runOLime.switchPipeline(0);//Red goal pipeline
+            runOLime.switchPipeline(0);//Red goal pipeline is 0
         }
         if (goalTag == 20) {
             telemetry.addLine("going for blue");
@@ -59,12 +79,20 @@ public class DecodeTeleop extends LinearOpMode {
         }
         DX = runOLime.getDX(goalTag);
         if (gamepad2.right_bumper || gamepad2.left_bumper) {
-            if (!Double.isNaN(DX) && Math.abs(DX) <= 1.0) {
+            /*if (!Double.isNaN(DX) && Math.abs(DX) <= 1.0) {
                 setTurnInPlace(0);
-            } else {
-                double turn = kP_TURN * DX;
-                setTurnInPlace(turn * driveCode.speed);
-            }
+            } else {*/
+                double turn;
+                if (!Double.isNaN(DX)) {
+                    integralTurn += DX;
+                }
+                if (tI_TURN == 0) {
+                    turn = kP_TURN * DX;
+                }else{
+                    turn = kP_TURN * DX + integralTurn/tI_TURN;
+                }
+                driveCode.runGivenTurn(turn, NaNTurnBehavior.SET_TO_JOYSTICK);
+            //}
         } else {
             driveCode.runWheels();
         }
@@ -73,6 +101,7 @@ public class DecodeTeleop extends LinearOpMode {
 
         telemetry.update();
         pinpoint.update();
+        manager.update();
 
         telemetry.addData("motor velocity: ", outtakeCode.outtakeMotor.getVelocity());
         manager.addData("MotorVelocity", outtakeMotor.getVelocity());
@@ -81,8 +110,21 @@ public class DecodeTeleop extends LinearOpMode {
         manager.addData("error", outtakeCode.error);
         manager.addData("derivative", outtakeCode.derivative);
         manager.addData("derivative*tD", outtakeCode.derivative * PIOuttake.td);
+        manager.addData("integralTurn", integralTurn);
+        if (tI_TURN != 0) {
+            manager.addData("integralTurn/tI_TURN", integralTurn / tI_TURN);
+        }else{
+            manager.addData("integralTurn/tI_TURN", 0);
+        }
         telemetry.addData("DX", DX);
+        manager.addData("DX", DX);
         telemetry.addData("DIST", DIST);
+        telemetry.addData("limelight Botpose x: ", runOLime.getBotPose().getX());
+        telemetry.addData("limelight Botpose y: ", runOLime.getBotPose().getY());
+        telemetry.addData("limelight BotPose heading: ", runOLime.getBotPose().getHeading());
+        manager.addData("limelight Botpose x: ", runOLime.getBotPose().getX());
+        manager.addData("limelight Botpose y: ", runOLime.getBotPose().getY());
+        manager.addData("limelight Botpose heading: ", runOLime.getBotPose().getHeading());
         telemetry.addData("OuttakeMotor Current", outtakeCode.outtakeMotor.getCurrent(CurrentUnit.MILLIAMPS));
         telemetry.addData("OuttakeMotor Power", outtakeCode.outtakeMotor.getPower());
         telemetry.addData("OuttakeMotor2 Power", outtakeCode.outtakeMotor.getPower());
@@ -101,9 +143,8 @@ public class DecodeTeleop extends LinearOpMode {
         if (PIOuttake.ti == 0){
             manager.addData("Integral/ti", 0);
         }else {
-            manager.addData("Integral/ti", outtakeCode.integral/PIOuttake.ti);
+            manager.addData("Integral/ti", outtakeCode.integral / PIOuttake.ti);
         }
-        manager.update();
     }
     void initialize() {
         manager = PanelsTelemetry.INSTANCE.getTelemetry();
@@ -128,6 +169,8 @@ public class DecodeTeleop extends LinearOpMode {
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");
         outtakeMotor = hardwareMap.get(DcMotorEx.class, "OuttakeLeft");
         outtakeMotor2 = hardwareMap.get(DcMotor.class, "OuttakeRight");
+        outtakeMotor.setDirection(DcMotor.Direction.REVERSE);
+        outtakeMotor2.setDirection(DcMotorSimple.Direction.REVERSE);
         pinpoint.setOffsets(6.75, -6.5, DistanceUnit.INCH);
         pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
         pinpoint.resetPosAndIMU();

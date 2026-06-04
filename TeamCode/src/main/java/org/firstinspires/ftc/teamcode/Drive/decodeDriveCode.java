@@ -27,6 +27,7 @@ public class decodeDriveCode {
         rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
         rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
     }
+
     public void runWheels() {
         // Run wheels in POV mode (note: The joystick goes negative when pushed forward, so negate it)
         // In this mode the Left stick moves the robot fwd and back, the Right stick turns left and right.
@@ -48,12 +49,10 @@ public class decodeDriveCode {
         // Normalize the values so neither exceed +/- 1.0
 
         double max = Math.max(Math.abs(leftFront), Math.abs(rightFront));
-        if (max > 1.0)
-        {
+        if (max > 1.0) {
             leftFront /= max;
             rightFront /= max;
         }
-
 
 
         // Output the safe vales to the motor drives.
@@ -62,7 +61,45 @@ public class decodeDriveCode {
         rightFrontDrive.setPower(rightFront * speed);
         rightBackDrive.setPower(rightBack * speed);
     }
+    public void runGivenTurn(double turn, NaNTurnBehavior NaNBehavior){
+        // Run wheels in POV mode (note: The joystick goes negative when pushed forward, so negate it)
+        // In this mode the Left stick moves the robot fwd and back, the turn given rotates it.
+        // This way it's easy to drive while using a set turn
+        if (Double.isNaN(turn)){
+            if (NaNBehavior == NaNTurnBehavior.SET_TO_JOYSTICK){
+                turn = gamepad1.right_stick_x;
+            }else if (NaNBehavior == NaNTurnBehavior.SET_TO_ZERO){
+                turn = 0;
+            }
+        }
+        double boostMultiplier = 1.2;
 
+        drive = -gamepad1.left_stick_y * boostMultiplier;
+        double strafe = gamepad1.left_stick_x * boostMultiplier;
+
+
+        // Combine drive and turn for blended motion.
+        // variables
+        double leftFront = drive + turn + strafe;
+        double leftBack = drive + turn - strafe;
+        double rightFront = drive - turn - strafe;
+        double rightBack = drive - turn + strafe;
+
+        // Normalize the values so neither exceed +/- 1.0
+
+        double max = Math.max(Math.abs(leftFront), Math.abs(rightFront));
+        if (max > 1.0) {
+            leftFront /= max;
+            rightFront /= max;
+        }
+
+
+        // Output the safe vales to the motor drives.
+        leftFrontDrive.setPower(leftFront * speed);
+        leftBackDrive.setPower(leftBack * speed);
+        rightFrontDrive.setPower(rightFront * speed);
+        rightBackDrive.setPower(rightBack * speed);
+    }
     public boolean areWheelsMoving(){
         return leftFrontDrive.getPower() != 0 || rightFrontDrive.getPower() != 0;
     }

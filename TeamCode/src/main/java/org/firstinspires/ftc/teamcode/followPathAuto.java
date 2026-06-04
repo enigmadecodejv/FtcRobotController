@@ -125,7 +125,7 @@ public class followPathAuto extends LinearOpMode {
         }else if (targetPower < -1){
             targetPower = -1;
         }
-        return targetSpeed;
+        return targetPower;
     }
     public void intake (){
         intakeLeft.setPower(1);
@@ -136,10 +136,12 @@ public class followPathAuto extends LinearOpMode {
         intakeRight.setPower(0);
     }
     public void outtake () {
-        outtakeGate.setPosition(0.2);
+        outtakeGate.setPosition(0.0);
         timer.resetTimer();
         while (numberOfArtifacts > 0 && opModeIsActive()) {
-
+            double outtakePower = outtakePID(speedPID);
+            outtakeLeft.setPower(outtakePower);
+            outtakeRight.setPower(outtakePower);
             robot.update();
             DX = runOLime.getDX(goalTag);
             if (DX != DX){
@@ -242,6 +244,9 @@ public class followPathAuto extends LinearOpMode {
         robot.followPath(forwards, 0.5, holdEnd);
         robot.update();
         while (robot.isBusy() && opModeIsActive()) {
+            double outtakePower = outtakePID(speedPID);
+            outtakeLeft.setPower(outtakePower);
+            outtakeRight.setPower(outtakePower);
             outtakeRight.setPower(outtakeLeft.getPower());
             robot.update();
         }
@@ -295,7 +300,8 @@ public class followPathAuto extends LinearOpMode {
         manager = PanelsTelemetry.INSTANCE.getTelemetry();
 
         outtakeLeft.setDirection(DcMotor.Direction.REVERSE);
-        outtakeLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        outtakeRight.setDirection(DcMotorSimple.Direction.REVERSE);
+        //outtakeLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         intakeLeft.setDirection(DcMotorSimple.Direction.REVERSE);
 
         timer = new Timer();
@@ -315,25 +321,28 @@ public class followPathAuto extends LinearOpMode {
         } else {
             speedPID = closeSpeed;
         }
-        outtakeLeft.setVelocity(speedPID);
         waitForStart();
         while (opModeIsActive()) {
-            PIDCoefficients pidCoefficients = outtakeLeft.getPIDCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
+            /*PIDCoefficients pidCoefficients = outtakeLeft.getPIDCoefficients(DcMotor.RunMode.RUN_USING_ENCODER);
             pidCoefficients.p = kp;
             pidCoefficients.i = ti;
             pidCoefficients.d = td;
             outtakeLeft.setPIDCoefficients(DcMotor.RunMode.RUN_USING_ENCODER, pidCoefficients);
-            outtakeRight.setPower(outtakeLeft.getPower());
+            outtakeRight.setPower(outtakeLeft.getPower());*/
+            double outtakePower = outtakePID(speedPID);
+            outtakeLeft.setPower(outtakePower);
+            outtakeRight.setPower(outtakePower);
             manager.addData("MotorVelocity", outtakeLeft.getVelocity());
             manager.addData("Integral", integral);
             manager.addData("Integral2", integral2);
             manager.addData("error", error);
+            manager.addData("outtakePower", outtakePower);
             if (PIOuttake.ti == 0){
                 manager.addData("Integral/ti", 0);
             }else {
                 manager.addData("Integral/ti", integral / ti);
             }
-            outtakeGate.setPosition(0.3);
+            outtakeGate.setPosition(0.2);
             if (partsOfAuto == PartsOfAuto.move && !robot.isBusy() && Math.abs(outtakeLeft.getVelocity() - speedPID) < 20) {
                 goToNextPose(getNextPose(), true);
                 partsOfAuto = PartsOfAuto.intake;
