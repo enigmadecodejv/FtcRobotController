@@ -337,6 +337,9 @@ public class followPathAuto extends LinearOpMode {
             manager.addData("Integral2", integral2);
             manager.addData("error", error);
             manager.addData("outtakePower", outtakePower);
+            manager.addData("Pedro x", robot.getPose().getX());
+            manager.addData("Pedro y", robot.getPose().getY());
+            manager.addData("Pedro heading", robot.getPose().getHeading());
             if (PIOuttake.ti == 0){
                 manager.addData("Integral/ti", 0);
             }else {

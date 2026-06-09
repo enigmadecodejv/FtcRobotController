@@ -37,7 +37,9 @@ public class LimelightRunner {
         LLResult result = limelight.getLatestResult();
         if (result != null && result.isValid()) {
             Pose3D BotPose = result.getBotpose();
-            return new Pose(BotPose.getPosition().x, BotPose.getPosition().y, BotPose.getOrientation().getYaw(AngleUnit.RADIANS));
+            return new Pose(BotPose.getPosition().x * (-2)/*limelight outputs a value between 0 and ~ -1.8, so adjust to meters*/,
+                    BotPose.getPosition().y + 1.8/*limelight outputs between ~ -1.8 and 1.8, so adjust*/,
+                    BotPose.getOrientation().getYaw(AngleUnit.RADIANS));
         }
         return null;
     }

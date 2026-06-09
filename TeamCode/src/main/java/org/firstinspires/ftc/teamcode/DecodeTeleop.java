@@ -1,12 +1,13 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.bylazar.configurables.annotations.Configurable;
+import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
-
+import com.pedropathing.paths.PathChain;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -15,6 +16,8 @@ import org.firstinspires.ftc.teamcode.Drive.NaNTurnBehavior;
 import org.firstinspires.ftc.teamcode.Drive.decodeDriveCode;
 import org.firstinspires.ftc.teamcode.Outtake.PIOuttake;
 import org.firstinspires.ftc.teamcode.intake.decodeIntake;
+import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
+
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
@@ -23,7 +26,9 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 @Configurable
 @TeleOp(name="DecodeTeleop", group="Enigma")
 public class DecodeTeleop extends LinearOpMode {
-    public GoBildaPinpointDriver pinpoint;
+    //public GoBildaPinpointDriver pinpoint;
+    public PathChain path;
+    public Follower robot;
     decodeDriveCode driveCode;
     decodeIntake intakeCode;
     PIOuttake outtakeCode;
@@ -50,10 +55,10 @@ public class DecodeTeleop extends LinearOpMode {
         driveCode.rightFrontDrive.setPower(-turn);
         driveCode.rightBackDrive.setPower(-turn);
     }
-    private void localizePinpoint(Pose robotPoseInMeters){
-        if (robotPoseInMeters != null) {
-            pinpoint.setPosition(new Pose2D(DistanceUnit.METER, robotPoseInMeters.getX(), robotPoseInMeters.getY(), AngleUnit.RADIANS, robotPoseInMeters.getHeading()));
-            pinpoint.setHeading(robotPoseInMeters.getHeading(), AngleUnit.RADIANS);
+    private void localizePinpoint(Pose limePose/*in meters and radians*/){
+        if (limePose != null) {
+            final double convert/*inches per meter*/ = 39.3700787402;
+            robot.setPose(new Pose(limePose.getX() * convert, limePose.getY() * convert, limePose.getHeading()));
         }
     }
     private void mainLoop() {
@@ -99,10 +104,6 @@ public class DecodeTeleop extends LinearOpMode {
         intakeCode.intake();
         outtakeCode.runUsingPID();
 
-        telemetry.update();
-        pinpoint.update();
-        manager.update();
-
         telemetry.addData("motor velocity: ", outtakeCode.outtakeMotor.getVelocity());
         manager.addData("MotorVelocity", outtakeMotor.getVelocity());
         manager.addData("Integral", outtakeCode.integral);
@@ -119,34 +120,47 @@ public class DecodeTeleop extends LinearOpMode {
         telemetry.addData("DX", DX);
         manager.addData("DX", DX);
         telemetry.addData("DIST", DIST);
-        telemetry.addData("limelight Botpose x: ", runOLime.getBotPose().getX());
-        telemetry.addData("limelight Botpose y: ", runOLime.getBotPose().getY());
-        telemetry.addData("limelight BotPose heading: ", runOLime.getBotPose().getHeading());
-        manager.addData("limelight Botpose x: ", runOLime.getBotPose().getX());
-        manager.addData("limelight Botpose y: ", runOLime.getBotPose().getY());
-        manager.addData("limelight Botpose heading: ", runOLime.getBotPose().getHeading());
+        Pose limelightOutput = runOLime.getBotPose();
+        manager.addData("limelight Botpose x", Double.NaN);
+        manager.addData("limelight Botpose y", Double.NaN);
+        manager.addData("limelight Botpose heading", Double.NaN);
+        if (limelightOutput != null) {
+            telemetry.addData("limelight Botpose x", limelightOutput.getX());
+            telemetry.addData("limelight Botpose y: ", limelightOutput.getY());
+            telemetry.addData("limelight BotPose heading: ", limelightOutput.getHeading());
+            manager.addData("limelight Botpose x", limelightOutput.getX());
+            manager.addData("limelight Botpose y", limelightOutput.getY());
+            manager.addData("limelight Botpose heading", limelightOutput.getHeading());
+        }
+        manager.addData("Pedropathing position x", robot.getPose().getX());
+        manager.addData("Pedropathing position y", robot.getPose().getY());
+        manager.addData("Pedropathing heading", robot.getHeading());
         telemetry.addData("OuttakeMotor Current", outtakeCode.outtakeMotor.getCurrent(CurrentUnit.MILLIAMPS));
         telemetry.addData("OuttakeMotor Power", outtakeCode.outtakeMotor.getPower());
         telemetry.addData("OuttakeMotor2 Power", outtakeCode.outtakeMotor.getPower());
-        telemetry.addData("FrontLeft drive power", driveCode.leftFrontDrive.getPower());
+        /*telemetry.addData("FrontLeft drive power", driveCode.leftFrontDrive.getPower());
         telemetry.addData("leftBack drive power", driveCode.leftBackDrive.getPower());
         telemetry.addData("rightFront drive power", driveCode.rightFrontDrive.getPower());
         telemetry.addData("rightBack drive power", driveCode.rightBackDrive.getPower());
-        manager.addData("OuttakeMotor Current", outtakeCode.outtakeMotor.getCurrent(CurrentUnit.MILLIAMPS));
+        */manager.addData("OuttakeMotor Current", outtakeCode.outtakeMotor.getCurrent(CurrentUnit.MILLIAMPS));
         manager.addData("OuttakeMotor Power", outtakeCode.outtakeMotor.getPower());
         manager.addData("OuttakeMotor2 Power", outtakeCode.outtakeMotor.getPower());
-        manager.addData("FrontLeft drive power", driveCode.leftFrontDrive.getPower());
+        /*manager.addData("FrontLeft drive power", driveCode.leftFrontDrive.getPower());
         manager.addData("leftBack drive power", driveCode.leftBackDrive.getPower());
         manager.addData("rightFront drive power", driveCode.rightFrontDrive.getPower());
         manager.addData("rightBack drive power", driveCode.rightBackDrive.getPower());
-
+*/
         if (PIOuttake.ti == 0){
             manager.addData("Integral/ti", 0);
         }else {
             manager.addData("Integral/ti", outtakeCode.integral / PIOuttake.ti);
         }
+        telemetry.update();
+        robot.update();
+        manager.update();
     }
     void initialize() {
+
         manager = PanelsTelemetry.INSTANCE.getTelemetry();
         driveCode = new decodeDriveCode(gamepad1, hardwareMap);
         intakeCode = new decodeIntake(hardwareMap, gamepad1);
@@ -161,22 +175,23 @@ public class DecodeTeleop extends LinearOpMode {
         while (!opModeIsActive()) {
             telemetry.update();
         }
+        robot = Constants.createFollower(hardwareMap);
+
+        //pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");
+        outtakeMotor = hardwareMap.get(DcMotorEx.class, "OuttakeLeft");
+        outtakeMotor2 = hardwareMap.get(DcMotor.class, "OuttakeRight");
+        outtakeMotor.setDirection(DcMotor.Direction.REVERSE);
+        outtakeMotor2.setDirection(DcMotorSimple.Direction.REVERSE);
+        //pinpoint.setOffsets(6.75, -6.5, DistanceUnit.INCH);
+        //pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
+        //pinpoint.resetPosAndIMU();
+        //pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
     }
 
     @Override
     public void runOpMode() {
         initialize();
-        pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");
-        outtakeMotor = hardwareMap.get(DcMotorEx.class, "OuttakeLeft");
-        outtakeMotor2 = hardwareMap.get(DcMotor.class, "OuttakeRight");
-        outtakeMotor.setDirection(DcMotor.Direction.REVERSE);
-        outtakeMotor2.setDirection(DcMotorSimple.Direction.REVERSE);
-        pinpoint.setOffsets(6.75, -6.5, DistanceUnit.INCH);
-        pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
-        pinpoint.resetPosAndIMU();
-        pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
         waitForStart();
-
         while (opModeIsActive()) {
             mainLoop();
         }
