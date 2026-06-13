@@ -1,7 +1,9 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
+import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
+@TeleOp (group = "enigma", name = "PinpointTester")
 public class PinpointTester extends LinearOpMode {
     public GoBildaPinpointDriver pinpoint;
     public void runOpMode(){
