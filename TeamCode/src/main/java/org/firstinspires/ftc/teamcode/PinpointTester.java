@@ -13,6 +13,7 @@ public class PinpointTester extends LinearOpMode {
         while (opModeIsActive()){
             telemetry.addData("Pinpoint position",pinpoint.getPosition());
             pinpoint.update();
+            telemetry.update();
         }
     }
 }
