@@ -35,7 +35,7 @@ public class LimelightRunner {
     }
     public Pose getBotPose() {
         LLResult result = limelight.getLatestResult();
-        if (result != null && result.isValid()) {
+        if (result != null && result.isValid() /*&& result.getFiducialResults().size() >= 2*/) {
             Pose3D BotPose = result.getBotpose();
             return new Pose(BotPose.getPosition().x * (-2)/*limelight outputs a value between 0 and ~ -1.8, so adjust to meters*/,
                     BotPose.getPosition().y + 1.8/*limelight outputs between ~ -1.8 and 1.8, so adjust*/,
