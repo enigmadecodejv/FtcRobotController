@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.oldCode;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
@@ -8,8 +8,9 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.teamcode.vision.PurpleOrGreen;
-import org.firstinspires.ftc.teamcode.vision.aprilTagProcessor;
+import org.firstinspires.ftc.teamcode.GoBildaPinpointDriver;
+import org.firstinspires.ftc.teamcode.oldCode.vision.PurpleOrGreen;
+import org.firstinspires.ftc.teamcode.oldCode.vision.aprilTagProcessor;
 
 @Autonomous(name = "PinpointAuto", group = "enigma")
 public class SammysPinpointAuto extends LinearOpMode {
@@ -49,7 +50,7 @@ public class SammysPinpointAuto extends LinearOpMode {
     boolean isRed;
     double [] shotPointsRed = {80,90,125,130};
     double [] shotPointsBlue = {65,90,20,130};
-    PurpleOrGreen [] motif;
+    PurpleOrGreen[] motif;
     double redGoalX;
     double redGoalY;
     double blueGoalX;

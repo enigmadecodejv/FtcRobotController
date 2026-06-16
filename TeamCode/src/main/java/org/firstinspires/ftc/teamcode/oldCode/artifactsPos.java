@@ -1,6 +1,6 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.oldCode;
 
-import org.firstinspires.ftc.teamcode.vision.PurpleOrGreen;
+import org.firstinspires.ftc.teamcode.oldCode.vision.PurpleOrGreen;
 
 public class artifactsPos {
     public double x;

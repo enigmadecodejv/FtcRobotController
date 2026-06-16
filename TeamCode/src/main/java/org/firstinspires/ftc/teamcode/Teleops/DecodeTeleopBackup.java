@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode;
+package org.firstinspires.ftc.teamcode.Teleops;
 
 import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.follower.Follower;
@@ -8,12 +8,11 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.pedropathing.paths.PathChain;
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
+
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.Pose2D;
 import org.firstinspires.ftc.teamcode.Drive.NaNTurnBehavior;
 import org.firstinspires.ftc.teamcode.Drive.decodeDriveCode;
+import org.firstinspires.ftc.teamcode.LimelightRunner;
 import org.firstinspires.ftc.teamcode.Outtake.PIOuttake;
 import org.firstinspires.ftc.teamcode.intake.decodeIntake;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
@@ -24,8 +23,8 @@ import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
 @Configurable
-@TeleOp(name="DecodeTeleop", group="Enigma")
-public class DecodeTeleop extends LinearOpMode {
+@TeleOp(name="DecodeTeleopBackup", group="Enigma")
+public class DecodeTeleopBackup extends LinearOpMode {
     //public GoBildaPinpointDriver pinpoint;
     public PathChain path;
     public Follower robot;
@@ -87,16 +86,16 @@ public class DecodeTeleop extends LinearOpMode {
             /*if (!Double.isNaN(DX) && Math.abs(DX) <= 1.0) {
                 setTurnInPlace(0);
             } else {*/
-                double turn;
-                if (!Double.isNaN(DX)) {
-                    integralTurn += DX;
-                }
-                if (tI_TURN == 0) {
-                    turn = kP_TURN * DX;
-                }else{
-                    turn = kP_TURN * DX + integralTurn/tI_TURN;
-                }
-                driveCode.runGivenTurn(turn, NaNTurnBehavior.SET_TO_JOYSTICK);
+            double turn;
+            if (!Double.isNaN(DX)) {
+                integralTurn += DX;
+            }
+            if (tI_TURN == 0) {
+                turn = kP_TURN * DX;
+            }else{
+                turn = kP_TURN * DX + integralTurn/tI_TURN;
+            }
+            driveCode.runGivenTurn(turn, NaNTurnBehavior.SET_TO_JOYSTICK);
             //}
         } else {
             driveCode.runWheels();

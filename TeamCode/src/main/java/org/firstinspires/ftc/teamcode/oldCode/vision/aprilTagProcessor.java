@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.vision;
+package org.firstinspires.ftc.teamcode.oldCode.vision;
 
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
@@ -15,7 +15,7 @@ public class aprilTagProcessor {
     public HardwareMap hardwareMap;
     public boolean targetFound = false;
     public double sizeAt1INCH;
-    public static PurpleOrGreen [] motif = null;
+    public static PurpleOrGreen[] motif = null;
 
     public aprilTagProcessor(HardwareMap hardwareMap) {
         this.hardwareMap = hardwareMap;

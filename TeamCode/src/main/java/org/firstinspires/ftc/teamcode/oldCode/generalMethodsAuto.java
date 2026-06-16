@@ -1,7 +1,4 @@
-package org.firstinspires.ftc.teamcode;
-
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+package org.firstinspires.ftc.teamcode.oldCode;
 
 public class generalMethodsAuto {
     public double RCCY = -4.375;//robot center correction Y

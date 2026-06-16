@@ -1,7 +1,4 @@
-package org.firstinspires.ftc.teamcode;
-
-import static org.firstinspires.ftc.teamcode.pedroPathing.Tuning.drawOnlyCurrent;
-import static org.firstinspires.ftc.teamcode.pedroPathing.Tuning.follower;
+package org.firstinspires.ftc.teamcode.oldCode;
 
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.BezierLine;
@@ -9,17 +6,11 @@ import com.pedropathing.geometry.Pose;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.pedropathing.paths.Path;
 import com.pedropathing.paths.PathChain;
 
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.teamcode.pedroPathing.Constants;
-import org.firstinspires.ftc.teamcode.vision.PurpleOrGreen;
-
-import java.lang.annotation.Target;
-import java.util.Arrays;
+import org.firstinspires.ftc.teamcode.oldCode.vision.PurpleOrGreen;
 
 @Autonomous(name = "targetingSystem", group = "enigma")
 public class targetingSystem extends LinearOpMode {
