@@ -11,7 +11,7 @@ public class PinpointTester extends LinearOpMode {
     public void runOpMode(){
         pinpoint = hardwareMap.get(GoBildaPinpointDriver.class, "PinPoint");
         pinpoint.resetPosAndIMU();
-        pinpoint.setOffsets(6.75, 2.9375, DistanceUnit.INCH);
+        pinpoint.setOffsets(-6.41176470588, -2.625, DistanceUnit.INCH);
         waitForStart();
         while (opModeIsActive()){
             telemetry.addData("Pinpoint position",pinpoint.getPosition());
