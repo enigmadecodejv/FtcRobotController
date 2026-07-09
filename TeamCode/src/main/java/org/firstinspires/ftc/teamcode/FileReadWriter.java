@@ -30,7 +30,7 @@ public class FileReadWriter {
         }
         return out;
     }
-    public String writeToFile(Integer[] write){
+    public String writeToFile(Double[] write){
         StringBuilder in = new StringBuilder();
         try{
             for (int i = 0; i < write.length; i++){
@@ -66,12 +66,12 @@ public class FileReadWriter {
     public String readFromFile() throws FileNotFoundException{
         return readFromFile(0);
     }
-    public ArrayList<Integer> readToIntegers(long timeOut) throws FileNotFoundException{
-        ArrayList<Integer> nums = new ArrayList<Integer>();
+    public ArrayList<Double> readToDoubles(long timeOut) throws FileNotFoundException{
+        ArrayList<Double> nums = new ArrayList<Double>();
         try(Scanner reader = new Scanner(file)){
             long startTime = System.currentTimeMillis();
             while(reader.hasNextLine() && (System.currentTimeMillis() - startTime < timeOut || timeOut <= 0)){
-                nums.add(Integer.valueOf(reader.nextLine()));
+                nums.add(Double.valueOf(reader.nextLine()));
             }
             if (!(System.currentTimeMillis() - startTime < timeOut || timeOut <= 0)){
                 return null;
@@ -81,7 +81,7 @@ public class FileReadWriter {
         }
         return nums;
     }
-    public ArrayList<Integer> readToIntegers() throws FileNotFoundException{
-        return readToIntegers(0);
+    public ArrayList<Double> readToDoubles() throws FileNotFoundException{
+        return readToDoubles(0);
     }
 }
