@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.os.Environment;
+
 import com.bylazar.configurables.annotations.Configurable;
 import com.pedropathing.follower.Follower;
 import com.pedropathing.geometry.Pose;
@@ -23,11 +25,15 @@ import com.bylazar.telemetry.TelemetryManager;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+
 @Configurable
 @TeleOp(name="DecodeTeleop", group="Enigma")
 public class DecodeTeleop extends LinearOpMode {
     //public GoBildaPinpointDriver pinpoint;
     public PathChain path;
+    public FileReadWriter fileReaderWriter;
     public Follower robot;
     decodeDriveCode driveCode;
     decodeIntake intakeCode;
@@ -160,7 +166,15 @@ public class DecodeTeleop extends LinearOpMode {
         manager.update();
     }
     void initialize() {
-
+        try {
+            StringBuilder buildStringer = new StringBuilder();
+            buildStringer.append(Environment.getExternalStorageDirectory().getPath());
+            buildStringer.append("/localizationInfo.txt");
+            fileReaderWriter = new FileReadWriter(buildStringer.toString());
+        } catch (Exception e) {
+            telemetry.addLine(e.getMessage());
+            fileReaderWriter = null;
+        }
         manager = PanelsTelemetry.INSTANCE.getTelemetry();
         driveCode = new decodeDriveCode(gamepad1, hardwareMap);
         intakeCode = new decodeIntake(hardwareMap, gamepad1);
@@ -176,7 +190,14 @@ public class DecodeTeleop extends LinearOpMode {
             telemetry.update();
         }
         robot = Constants.createFollower(hardwareMap);
-
+        try {
+            if (fileReaderWriter != null) {
+                ArrayList<Double> fromFile = fileReaderWriter.readToDoubles();
+                robot.setStartingPose(new Pose(fromFile.get(0), fromFile.get(1), fromFile.get(2)));
+            }
+        } catch (Exception e) {
+            telemetry.addLine(e.getMessage());
+        }
         //pinpoint = hardwareMap.get(GoBildaPinpointDriver.class,"PinPoint");
         outtakeMotor = hardwareMap.get(DcMotorEx.class, "OuttakeLeft");
         outtakeMotor2 = hardwareMap.get(DcMotor.class, "OuttakeRight");

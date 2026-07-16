@@ -1,5 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
+import android.os.Environment;
+
 import com.bylazar.configurables.annotations.Configurable;
 import com.bylazar.telemetry.PanelsTelemetry;
 import com.bylazar.telemetry.TelemetryManager;
@@ -40,14 +42,19 @@ public class followPathAutoCRI extends LinearOpMode {
     public boolean colorSet = false;
     public boolean isStartSet = false;
     public Pose shootPos;
+    public FileReadWriter fileReaderWriter;
     public Pose[] positionsBlueFar = {
-            new Pose(40,35, Math.toRadians(180)),
-            new Pose(10,35,Math.toRadians(180)),
-            new Pose(55, 58, Math.toRadians(180)),
-            new Pose(10,60, Math.toRadians(180)),
-            new Pose(36, 84, Math.toRadians(180)),
-            new Pose(13, 84, Math.toRadians(180)),
-            new Pose(39,12, Math.toRadians(180))
+            //to and through 1st artifacts
+            new Pose(35,58,Math.toRadians(180)),
+            new Pose(12, 58, Math.toRadians(180)),
+            //to and through 2nd artifacts
+            new Pose(35,82, Math.toRadians(180)),
+            new Pose(12, 82, Math.toRadians(180)),
+            //to and through 3rd artifacts
+            new Pose(35, 106, Math.toRadians(180)),
+            new Pose(12,106, Math.toRadians(180)),
+            //leve
+            new Pose(36,82, Math.toRadians(180))
     };
     public Pose[] positionsRedFar = {
             new Pose(97, 35, 0),
@@ -249,6 +256,10 @@ public class followPathAutoCRI extends LinearOpMode {
             outtakeRight.setPower(outtakePower);
             outtakeRight.setPower(outtakeLeft.getPower());
             robot.update();
+            if (fileReaderWriter != null) {
+                Double[] lastPose = {Double.valueOf(robot.getPose().getX()), Double.valueOf(robot.getPose().getY()), Double.valueOf(robot.getHeading())};
+                fileReaderWriter.writeToFile(lastPose);
+            }
         }
         lastPose = endPose;
     }
@@ -283,6 +294,15 @@ public class followPathAutoCRI extends LinearOpMode {
     //go to shoot pos
     //pickup balls
     public void runOpMode (){
+        try {
+            StringBuilder buildStringer = new StringBuilder();
+            buildStringer.append(Environment.getExternalStorageDirectory().getPath());
+            buildStringer.append("/localizationInfo.txt");
+            fileReaderWriter = new FileReadWriter(buildStringer.toString());
+        } catch (Exception e) {
+            telemetry.addLine(e.getMessage());
+            fileReaderWriter = null;
+        }
         leftFrontDrive = hardwareMap.get(DcMotor.class, "FrontLeft");
         leftBackDrive = hardwareMap.get(DcMotor.class, "RearLeft");
         rightFrontDrive = hardwareMap.get(DcMotor.class, "FrontRight");
