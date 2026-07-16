@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -11,15 +10,10 @@ import java.util.Scanner;
 public class FileReadWriter {
     private File file;
     private String filePath;
-    public FileReadWriter(String filePath){
-        try {
-            this.file = new File(filePath);
-            this.filePath = filePath;
-            file.createNewFile();
-        }catch(Exception e){
-            this.file = null;
-            this.filePath = filePath;
-        }
+    public FileReadWriter(String filePath) throws IOException, SecurityException{
+        this.file = new File(filePath);
+        this.filePath = filePath;
+        file.createNewFile();
     }
     public String writeToFile(String write)throws IOException{
         String out = "";
@@ -54,6 +48,7 @@ public class FileReadWriter {
             long startTime = System.currentTimeMillis();
             while (reader.hasNextLine() && (System.currentTimeMillis() - startTime < timeOut || timeOut <= 0)){
                 out.append(reader.nextLine());
+                out.append("\n");
             }
             if (!(System.currentTimeMillis() - startTime < timeOut || timeOut <= 0)){
                 return "timed out";
