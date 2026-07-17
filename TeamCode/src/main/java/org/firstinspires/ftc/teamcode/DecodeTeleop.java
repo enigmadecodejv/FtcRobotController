@@ -68,17 +68,17 @@ public class DecodeTeleop extends LinearOpMode {
         }
     }
     private void mainLoop() {
-        if (gamepad2.left_trigger > 0.25){
+        /*if (gamepad2.left_trigger > 0.25){
             Pose limelightResult = runOLime.getBotPose();
             if (limelightResult != null){
                 localizePinpoint(limelightResult);
             }
-        }
-        if (gamepad2.x) {
+        }*/
+        if (gamepad1.x) {
             //bluetag
             goalTag = 20;
             runOLime.switchPipeline(1);//Blue goal pipeline is 1
-        } else if (gamepad2.b){
+        } else if (gamepad1.b){
             //redtag
             goalTag = 24;
             runOLime.switchPipeline(0);//Red goal pipeline is 0
@@ -89,7 +89,7 @@ public class DecodeTeleop extends LinearOpMode {
             telemetry.addLine("going for red");
         }
         DX = runOLime.getDX(goalTag);
-        if (gamepad2.right_bumper || gamepad2.left_bumper) {
+        if (gamepad1.left_bumper) {
             /*if (!Double.isNaN(DX) && Math.abs(DX) <= 1.0) {
                 setTurnInPlace(0);
             } else {*/

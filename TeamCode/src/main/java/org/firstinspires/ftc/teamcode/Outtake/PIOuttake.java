@@ -71,13 +71,13 @@ public class PIOuttake {
         return kp*(error + integral/ti + td*derivative);
     }
     public void runUsingPID(){
-        if (currentGamepad2.a){
+        if (currentGamepad1.a){
             speedPID = closeSpeed;
             LED.setPosition(0.621);
-        }else if (currentGamepad2.y){
+        }else if (currentGamepad1.y){
             speedPID = farSpeed;
             LED.setPosition(0.287);
-        }else if (currentGamepad2.dpad_down || currentGamepad2.dpad_left || currentGamepad2.dpad_up || currentGamepad2.dpad_right){
+        }else if (currentGamepad1.dpad_down || currentGamepad1.dpad_left || currentGamepad1.dpad_up || currentGamepad1.dpad_right){
             speedPID = 0;
             LED.setPosition(0.510);
         }
