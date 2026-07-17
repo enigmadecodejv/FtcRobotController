@@ -12,7 +12,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 public class PIOuttake {
     public Gamepad gamepad1;
     public Gamepad gamepad2;
-    public Servo outtakeServo;
+    public Servo outtakeServo0;
+    public Servo outtakeServo1;
     public DcMotorEx outtakeMotor;
     public DcMotor outtakeMotor2;
     public Gamepad currentGamepad1;
@@ -36,8 +37,10 @@ public class PIOuttake {
     public double speedPID = closeSpeed;
     public Servo LED;
     public static double derivativeThreshhold = 0;
-    public static double outtakeServoOpenPosition = 0.0;
-    public static double outtakeServoClosedPosition = 0.2;
+    public static double outtakeServo0OpenPosition = 0.7;
+    public static double outtakeServo0ClosedPosition = 0.44;
+    public static double outtakeServo1OpenPosition = 1.0;
+    public static double outtakeServo1ClosedPosition = 0.75;
 
     public PIOuttake(HardwareMap hardwareMap, Gamepad gamepad1, Gamepad gamepad2) {
         this.gamepad1 = gamepad1;
@@ -47,7 +50,8 @@ public class PIOuttake {
         outtakeMotor2 = hardwareMap.get(DcMotor.class, "OuttakeRight");
         outtakeMotor.setDirection(DcMotor.Direction.REVERSE);
         outtakeMotor2.setDirection(DcMotorSimple.Direction.REVERSE);
-        outtakeServo = hardwareMap.get(Servo.class, "OuttakeGate");
+        outtakeServo0 = hardwareMap.get(Servo.class, "OuttakeGateRight");
+        outtakeServo1 = hardwareMap.get(Servo.class, "OuttakeGateLeft");
         LED = hardwareMap.get(Servo.class, "RGBLightIndicator");
 
         currentGamepad1 = gamepad1;
@@ -90,12 +94,14 @@ public class PIOuttake {
         outtakeMotor.setPower(targetPower);
         outtakeMotor2.setPower(targetPower);
         if (currentGamepad1.left_trigger > 0.25) {
-            outtakeServo.setPosition(outtakeServoOpenPosition);
+            outtakeServo0.setPosition(outtakeServo0OpenPosition);
+            outtakeServo1.setPosition(outtakeServo1OpenPosition);
         } else {
-            outtakeServo.setPosition(outtakeServoClosedPosition);
+            outtakeServo0.setPosition(outtakeServo0ClosedPosition);
+            outtakeServo1.setPosition(outtakeServo1ClosedPosition);
         }
     }
-    public void outtake() {
+    /*public void outtake() {
         pastGamepad1 = currentGamepad1;
         currentGamepad1 = gamepad1;
         if (currentGamepad1.left_trigger > 0.25) {
@@ -131,5 +137,5 @@ public class PIOuttake {
             outtakeMotor.setPower(-0.65);
             outtakeMotor2.setPower(-0.65);
         }
-    }
+    }*/
 }

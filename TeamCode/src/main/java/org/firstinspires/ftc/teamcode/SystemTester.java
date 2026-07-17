@@ -34,13 +34,13 @@ public class SystemTester extends LinearOpMode {
     public void runOpMode(){
         pastGamepad = new Gamepad();
         motors = new DcMotor[numMotors];
-        motors[0] = hardwareMap.get(DcMotor.class, "FrontRight");
+        motors[0] = hardwareMap.get(DcMotor.class, "FrontRight");//needs to be reversed
         motors[1] = hardwareMap.get(DcMotor.class, "RearRight"); //rearight needs to be reversed
         motors[2] = hardwareMap.get(DcMotor.class, "FrontLeft");
         motors[3] = hardwareMap.get(DcMotor.class,"RearLeft");
         motors[4] = hardwareMap.get(DcMotor.class, "OuttakeLeft"); //good for direction
         motors[5] = hardwareMap.get(DcMotor.class, "OuttakeRight");
-        motors[6] = hardwareMap.get(DcMotor.class, "IntakeLeft");
+        motors[6] = hardwareMap.get(DcMotor.class, "IntakeLeft");//reverse
         motors[7] = hardwareMap.get(DcMotor.class, "IntakeRight");
         servos = new Servo[numServos];
         servos[0] = hardwareMap.get(Servo.class, "OuttakeGateRight");
