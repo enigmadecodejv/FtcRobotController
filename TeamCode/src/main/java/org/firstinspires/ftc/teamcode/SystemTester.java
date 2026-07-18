@@ -38,8 +38,8 @@ public class SystemTester extends LinearOpMode {
         motors[1] = hardwareMap.get(DcMotor.class, "RearRight"); //rearight needs to be reversed
         motors[2] = hardwareMap.get(DcMotor.class, "FrontLeft");
         motors[3] = hardwareMap.get(DcMotor.class,"RearLeft");
-        motors[4] = hardwareMap.get(DcMotor.class, "OuttakeLeft"); //good for direction
-        motors[5] = hardwareMap.get(DcMotor.class, "OuttakeRight");
+        motors[4] = hardwareMap.get(DcMotor.class, "OuttakeLeft"); //reverse
+        motors[5] = hardwareMap.get(DcMotor.class, "OuttakeRight");//reverse
         motors[6] = hardwareMap.get(DcMotor.class, "IntakeLeft");//reverse
         motors[7] = hardwareMap.get(DcMotor.class, "IntakeRight");
         servos = new Servo[numServos];

@@ -29,11 +29,11 @@ public class PIOuttake {
     public double timer = 0;
     public double lastError = 33778;
     public static double kp = 0.015;
-    public static double ti = 30;
+    public static double ti = 60;
     public static double td = 0;
     public double integral2 = 0;
-    public static double farSpeed = 1475; // for now, real speed is 1425
-    public static double closeSpeed = 1200;
+    public static double farSpeed = 1650; // for now, real speed is 1425
+    public static double closeSpeed = 1150;
     public double speedPID = closeSpeed;
     public Servo LED;
     public static double derivativeThreshhold = 0;
