@@ -53,17 +53,21 @@ public class followPathAutoCRI extends LinearOpMode {
             //to and through 3rd artifacts
             new Pose(35, 106, Math.toRadians(180)),
             new Pose(12,106, Math.toRadians(180)),
-            //leve
+            //leave
             new Pose(36,82, Math.toRadians(180))
     };
     public Pose[] positionsRedFar = {
-            new Pose(97, 35, 0),
-            new Pose(125, 36, 0),
-            new Pose(83, 55, 0),
-            new Pose(125, 60, Math.toRadians(0)),
-            new Pose(97, 84, Math.toRadians(0)),
-            new Pose(130, 84, Math.toRadians(0)),
-            new Pose(114, 12, Math.toRadians(0))
+            //to and through 1st artifacts
+            new Pose(153, 58, 0),
+            new Pose(176, 58, 0),
+            //to and through 2nd artifacts
+            new Pose(153, 82, 0),
+            new Pose(176, 82, Math.toRadians(0)),
+            //to and through 3rd artifacts
+            new Pose(153, 106, Math.toRadians(0)),
+            new Pose(176, 106, Math.toRadians(0)),
+            //leave
+            new Pose(36, 106, Math.toRadians(0))
     };
     public Pose[] positionsBlueNear = {
             new Pose(48, 84, Math.toRadians(180)),
@@ -212,7 +216,7 @@ public class followPathAutoCRI extends LinearOpMode {
         telemetry.addLine("looking for starting pos press a for nearside, b for farside");
         if (color.equals("blue")) {
             if (gamepad1.b) {
-                robotPos = new Pose(56, 8, Math.toRadians(270));
+                robotPos = new Pose(79, 9, Math.toRadians(270));
                 shootPos = new Pose(59,16, Math.toRadians(293));
                 isFar = true;
             } else if (gamepad1.a) {
