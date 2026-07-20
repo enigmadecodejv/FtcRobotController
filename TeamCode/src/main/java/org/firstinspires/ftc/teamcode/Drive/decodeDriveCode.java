@@ -22,10 +22,10 @@ public class decodeDriveCode {
         rightFrontDrive = hardwareMap.get(DcMotor.class, "FrontRight");
         rightBackDrive = hardwareMap.get(DcMotor.class, "RearRight");
 
-        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        rightFrontDrive.setDirection(DcMotor.Direction.FORWARD);
+        rightBackDrive.setDirection(DcMotor.Direction.FORWARD);
     }
 
     public void runWheels() {

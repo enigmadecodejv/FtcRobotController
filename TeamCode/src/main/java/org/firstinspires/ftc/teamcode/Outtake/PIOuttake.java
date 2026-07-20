@@ -41,6 +41,7 @@ public class PIOuttake {
     public static double outtakeServo0ClosedPosition = 0.44;
     public static double outtakeServo1OpenPosition = 1.0;
     public static double outtakeServo1ClosedPosition = 0.75;
+    public static double maxOuttakePower = 1.0;
 
     public PIOuttake(HardwareMap hardwareMap, Gamepad gamepad1, Gamepad gamepad2) {
         this.gamepad1 = gamepad1;
@@ -86,10 +87,10 @@ public class PIOuttake {
             LED.setPosition(0.510);
         }
         double targetPower = outtakePID(speedPID);
-        if(targetPower > 0.8){
-            targetPower = 0.8;
-        }else if (targetPower < -0.8){
-            targetPower = -0.8;
+        if(targetPower > maxOuttakePower){
+            targetPower = maxOuttakePower;
+        }else if (targetPower < -maxOuttakePower){
+            targetPower = -maxOuttakePower;
         }
         outtakeMotor.setPower(targetPower);
         outtakeMotor2.setPower(targetPower);

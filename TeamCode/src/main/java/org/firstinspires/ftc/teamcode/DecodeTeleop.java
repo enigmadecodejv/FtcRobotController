@@ -50,6 +50,9 @@ public class DecodeTeleop extends LinearOpMode {
     public static double tI_TURN = 960;
     public double integralTurn = 0;
     public double MAXTURN = 0.75;
+    public int currentPipeline = 0;
+    public String[] pipelineNames = {"Blue outer goal", "Red outer goal", "Blue inner goal", "Red inner goal", "Localization"};
+    public int[] goalTags = {20, 24, 10, 14, -1};
     //public Pose aprilTagBlue = new Pose(16, 131, /*degrees*/-45);
     //public Pose aprilTagRed = new Pose(128, 130, /*degrees*/45);
     private void setTurnInPlace(double turn) {
@@ -75,20 +78,23 @@ public class DecodeTeleop extends LinearOpMode {
             }
         }*/
         if (gamepad1.x) {
-            //bluetag
-            goalTag = 20;
-            runOLime.switchPipeline(1);//Blue goal pipeline is 1
+            currentPipeline++;
+            if (currentPipeline >= pipelineNames.length){
+                currentPipeline = pipelineNames.length - 1;
+            }else if (currentPipeline < 0){
+                currentPipeline = 0;
+            }
+            runOLime.switchPipeline(currentPipeline);
         } else if (gamepad1.b){
-            //redtag
-            goalTag = 24;
-            runOLime.switchPipeline(0);//Red goal pipeline is 0
+            currentPipeline--;
+            if (currentPipeline < 0){
+                currentPipeline = 0;
+            }else if (currentPipeline >= pipelineNames.length){
+                currentPipeline = pipelineNames.length - 1;
+            }
+            runOLime.switchPipeline(currentPipeline);
         }
-        if (goalTag == 20) {
-            telemetry.addLine("going for blue");
-        } else {
-            telemetry.addLine("going for red");
-        }
-        DX = runOLime.getDX(goalTag);
+        DX = runOLime.getDX(goalTags[currentPipeline]);
         if (gamepad1.left_bumper) {
             /*if (!Double.isNaN(DX) && Math.abs(DX) <= 1.0) {
                 setTurnInPlace(0);
@@ -110,7 +116,8 @@ public class DecodeTeleop extends LinearOpMode {
         intakeCode.intake();
         outtakeCode.runUsingPID();
 
-        telemetry.addData("motor velocity: ", outtakeCode.outtakeMotor.getVelocity());
+        telemetry.addData("Pipeline for limelight is", pipelineNames[currentPipeline]);
+        /*telemetry.addData("motor velocity: ", outtakeCode.outtakeMotor.getVelocity());
         manager.addData("MotorVelocity", outtakeMotor.getVelocity());
         manager.addData("Integral", outtakeCode.integral);
         manager.addData("Integral2", outtakeCode.integral2);
@@ -122,10 +129,10 @@ public class DecodeTeleop extends LinearOpMode {
             manager.addData("integralTurn/tI_TURN", integralTurn / tI_TURN);
         }else{
             manager.addData("integralTurn/tI_TURN", 0);
-        }
+        }*/
         telemetry.addData("DX", DX);
         manager.addData("DX", DX);
-        telemetry.addData("DIST", DIST);
+        //telemetry.addData("DIST", DIST);
         Pose limelightOutput = runOLime.getBotPose();
         manager.addData("limelight Botpose x", Double.NaN);
         manager.addData("limelight Botpose y", Double.NaN);
@@ -141,21 +148,20 @@ public class DecodeTeleop extends LinearOpMode {
         manager.addData("Pedropathing position x", robot.getPose().getX());
         manager.addData("Pedropathing position y", robot.getPose().getY());
         manager.addData("Pedropathing heading", robot.getHeading());
-        telemetry.addData("OuttakeMotor Current", outtakeCode.outtakeMotor.getCurrent(CurrentUnit.MILLIAMPS));
+        /*telemetry.addData("OuttakeMotor Current", outtakeCode.outtakeMotor.getCurrent(CurrentUnit.MILLIAMPS));
         telemetry.addData("OuttakeMotor Power", outtakeCode.outtakeMotor.getPower());
         telemetry.addData("OuttakeMotor2 Power", outtakeCode.outtakeMotor.getPower());
-        /*telemetry.addData("FrontLeft drive power", driveCode.leftFrontDrive.getPower());
+        telemetry.addData("FrontLeft drive power", driveCode.leftFrontDrive.getPower());
         telemetry.addData("leftBack drive power", driveCode.leftBackDrive.getPower());
         telemetry.addData("rightFront drive power", driveCode.rightFrontDrive.getPower());
         telemetry.addData("rightBack drive power", driveCode.rightBackDrive.getPower());
-        */manager.addData("OuttakeMotor Current", outtakeCode.outtakeMotor.getCurrent(CurrentUnit.MILLIAMPS));
+        manager.addData("OuttakeMotor Current", outtakeCode.outtakeMotor.getCurrent(CurrentUnit.MILLIAMPS));
         manager.addData("OuttakeMotor Power", outtakeCode.outtakeMotor.getPower());
         manager.addData("OuttakeMotor2 Power", outtakeCode.outtakeMotor.getPower());
-        /*manager.addData("FrontLeft drive power", driveCode.leftFrontDrive.getPower());
+        manager.addData("FrontLeft drive power", driveCode.leftFrontDrive.getPower());
         manager.addData("leftBack drive power", driveCode.leftBackDrive.getPower());
         manager.addData("rightFront drive power", driveCode.rightFrontDrive.getPower());
-        manager.addData("rightBack drive power", driveCode.rightBackDrive.getPower());
-*/
+        manager.addData("rightBack drive power", driveCode.rightBackDrive.getPower());*/
         if (PIOuttake.ti == 0){
             manager.addData("Integral/ti", 0);
         }else {
