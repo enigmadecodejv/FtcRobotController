@@ -35,7 +35,8 @@ public class followPathAutoCRI extends LinearOpMode {
     public Timer timer;
     DcMotor outtakeRight;
     DcMotorEx outtakeLeft;
-    Servo outtakeGate;
+    Servo outtakeGateRight;
+    Servo outtakeGateLeft;
     LimelightRunner runOLime;
     public boolean isRed = false;
     public String color = "blue";
@@ -43,6 +44,9 @@ public class followPathAutoCRI extends LinearOpMode {
     public boolean isStartSet = false;
     public Pose shootPos;
     public FileReadWriter fileReaderWriter;
+    public static double kP_TURN = 0.03;
+    public static double tI_TURN = 960;
+    public int integralTurn = 0;
     public Pose[] positionsBlueFar = {
             //to and through 1st artifacts
             new Pose(35,58,Math.toRadians(180)),
@@ -147,21 +151,26 @@ public class followPathAutoCRI extends LinearOpMode {
         intakeRight.setPower(0);
     }
     public void outtake () {
-        outtakeGate.setPosition(0.0);
+        outtakeGateRight.setPosition(PIOuttake.outtakeServo0OpenPosition);
+        outtakeGateLeft.setPosition(PIOuttake.outtakeServo1OpenPosition);
         timer.resetTimer();
         while (numberOfArtifacts > 0 && opModeIsActive()) {
             double outtakePower = outtakePID(speedPID);
             outtakeLeft.setPower(outtakePower);
             outtakeRight.setPower(outtakePower);
-            robot.update();
+            //robot.update();
             DX = runOLime.getDX(goalTag);
             if (DX != DX){
                 telemetry.addLine("DX is NaN");
             }
-            if (Math.abs(DX) > 1.0) {
-                double turn = DX * kp_DX;
-                if (Math.abs(turn) > 0.75){
-                    turn = 0.75 * turn/Math.abs(turn);
+                double turn;
+                if (!Double.isNaN(DX)) {
+                    integralTurn += DX;
+                }
+                if (tI_TURN == 0) {
+                    turn = kP_TURN * DX;
+                }else{
+                    turn = kP_TURN * DX + integralTurn/tI_TURN;
                 }
                 leftFrontDrive.setPower(+turn);
                 leftBackDrive.setPower(+turn);
@@ -169,7 +178,7 @@ public class followPathAutoCRI extends LinearOpMode {
                 rightBackDrive.setPower(-turn);
                 turnOffIntake();
                 timer.resetTimer();
-            } else if (!robot.isBusy()) {
+            if (!robot.isBusy()) { //is incorrect. replace with: if (robot is moving)
                 intake();
                 outtakeRight.setPower(outtakeLeft.getPower());
                 if (timer.getElapsedTimeSeconds() >= 1) {
@@ -217,11 +226,11 @@ public class followPathAutoCRI extends LinearOpMode {
         if (color.equals("blue")) {
             if (gamepad1.b) {
                 robotPos = new Pose(79, 9, Math.toRadians(270));
-                shootPos = new Pose(59,16, Math.toRadians(293));
+                shootPos = new Pose(82,59, Math.toRadians(293));
                 isFar = true;
             } else if (gamepad1.a) {
-                robotPos = new Pose(39, 136, Math.toRadians(90));
-                shootPos = new Pose(59, 85, Math.toRadians(138));
+                robotPos = new Pose(108, 9, Math.toRadians(90));
+                shootPos = new Pose(106, 59, Math.toRadians(138));
                 isFar = false;
             }
         } else if (color.equals("red")) {
@@ -252,7 +261,7 @@ public class followPathAutoCRI extends LinearOpMode {
                 .addPath(new BezierLine(lastPose, endPose))
                 .setLinearHeadingInterpolation(lastPose.getHeading(), endPose.getHeading())
                 .build();
-        robot.followPath(forwards, 0.5, holdEnd);
+        robot.followPath(forwards, 1, holdEnd);
         robot.update();
         while (robot.isBusy() && opModeIsActive()) {
             double outtakePower = outtakePID(speedPID);
@@ -320,7 +329,8 @@ public class followPathAutoCRI extends LinearOpMode {
         outtakeRight = hardwareMap.get(DcMotor.class, "OuttakeRight");
         outtakeLeft = hardwareMap.get(DcMotorEx.class, "OuttakeLeft");
 
-        outtakeGate = hardwareMap.get(Servo.class, "OuttakeGate");
+        outtakeGateRight = hardwareMap.get(Servo.class, "OuttakeGateRight");
+        outtakeGateLeft = hardwareMap.get(Servo.class, "OuttakeGateLeft");
         manager = PanelsTelemetry.INSTANCE.getTelemetry();
 
         outtakeLeft.setDirection(DcMotor.Direction.REVERSE);
@@ -369,7 +379,8 @@ public class followPathAutoCRI extends LinearOpMode {
             }else {
                 manager.addData("Integral/ti", integral / ti);
             }
-            outtakeGate.setPosition(0.2);
+            outtakeGateRight.setPosition(PIOuttake.outtakeServo0ClosedPosition);
+            outtakeGateLeft.setPosition(PIOuttake.outtakeServo1ClosedPosition);
             if (partsOfAuto == PartsOfAuto.move && !robot.isBusy() && Math.abs(outtakeLeft.getVelocity() - speedPID) < 20) {
                 goToNextPose(getNextPose(), true);
                 partsOfAuto = PartsOfAuto.intake;
