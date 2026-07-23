@@ -229,14 +229,14 @@ public class followPathAutoCRI extends LinearOpMode {
                 shootPos = new Pose(82,59, Math.toRadians(293));
                 isFar = true;
             } else if (gamepad1.a) {
-                robotPos = new Pose(108, 9, Math.toRadians(90));
-                shootPos = new Pose(106, 59, Math.toRadians(138));
+                robotPos = new Pose(0, 0, Math.toRadians(90));
+                shootPos = new Pose(0, 0, Math.toRadians(138));
                 isFar = false;
             }
         } else if (color.equals("red")) {
             if (gamepad1.b) {
-                robotPos = new Pose(85, 8.75, Math.toRadians(270));
-                shootPos = new Pose(85, 16, Math.toRadians(240));
+                robotPos = new Pose(108, 9, Math.toRadians(270));
+                shootPos = new Pose(106, 59, Math.toRadians(240));
                 isFar = true;
             } else if (gamepad1.a) {
                 robotPos = new Pose(104, 136, Math.toRadians(90));
