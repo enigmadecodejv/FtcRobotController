@@ -27,8 +27,8 @@ public class decodeIntake {
             intakeRight.setPower(intakePower);
             intakeLeft.setPower(intakePower);
         }else if (gamepad1.right_bumper){
-            intakeRight.setPower((-0.8) * intakePower);
-            intakeLeft.setPower((-0.8) * intakePower);
+            intakeRight.setPower((-0.5) * intakePower);
+            intakeLeft.setPower((-0.5) * intakePower);
         }else {
             intakeRight.setPower(0);
             intakeLeft.setPower(0);

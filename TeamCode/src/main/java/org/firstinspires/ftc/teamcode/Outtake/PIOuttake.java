@@ -12,13 +12,11 @@ import com.qualcomm.robotcore.hardware.Servo;
 public class PIOuttake {
     public Gamepad gamepad1;
     public Gamepad gamepad2;
+    public Gamepad pastGamepad1;
     public Servo outtakeServo0;
     public Servo outtakeServo1;
     public DcMotorEx outtakeMotor;
     public DcMotor outtakeMotor2;
-    public Gamepad currentGamepad1;
-    public Gamepad currentGamepad2;
-    public Gamepad pastGamepad1;
     public HardwareMap hardwareMap;
     public boolean shouldTheOutakeMotorsBeOnHighPower = false;
     public boolean lowPower = false;
@@ -32,8 +30,10 @@ public class PIOuttake {
     public static double ti = 60;
     public static double td = 0;
     public double integral2 = 0;
+    public boolean isFar = false;
     public static double farSpeed = 1650; // for now, real speed is 1425
     public static double closeSpeed = 1150;
+    public static double maxSpeed = 2000;
     public double speedPID = closeSpeed;
     public Servo LED;
     public static double derivativeThreshhold = 0;
@@ -46,6 +46,8 @@ public class PIOuttake {
     public PIOuttake(HardwareMap hardwareMap, Gamepad gamepad1, Gamepad gamepad2) {
         this.gamepad1 = gamepad1;
         this.gamepad2 = gamepad2;
+        pastGamepad1 = new Gamepad();
+        pastGamepad1.copy(this.gamepad1);
         this.hardwareMap = hardwareMap;
         outtakeMotor = hardwareMap.get(DcMotorEx.class, "OuttakeLeft");
         outtakeMotor2 = hardwareMap.get(DcMotor.class, "OuttakeRight");
@@ -54,9 +56,6 @@ public class PIOuttake {
         outtakeServo0 = hardwareMap.get(Servo.class, "OuttakeGateRight");
         outtakeServo1 = hardwareMap.get(Servo.class, "OuttakeGateLeft");
         LED = hardwareMap.get(Servo.class, "RGBLightIndicator");
-
-        currentGamepad1 = gamepad1;
-        currentGamepad2 = gamepad2;
     }
     public double outtakePID(double targetSpeed){
         error = targetSpeed - outtakeMotor.getVelocity();
@@ -75,17 +74,21 @@ public class PIOuttake {
         }
         return kp*(error + integral/ti + td*derivative);
     }
-    public void runUsingPID(){
-        if (currentGamepad1.a){
-            speedPID = closeSpeed;
-            LED.setPosition(0.621);
-        }else if (currentGamepad1.y){
-            speedPID = farSpeed;
-            LED.setPosition(0.287);
-        }else if (currentGamepad1.dpad_down || currentGamepad1.dpad_left || currentGamepad1.dpad_up || currentGamepad1.dpad_right){
-            speedPID = 0;
-            LED.setPosition(0.510);
+    public void updateSpeedPID() {
+        double speedDelta = 25;
+        if (gamepad1.y && !pastGamepad1.y){
+            isFar = !isFar;
+            speedPID = (isFar) ? farSpeed : closeSpeed;
+            LED.setPosition((isFar) ? 0.287 : 0.621);
+        } else if (gamepad1.dpad_up && !pastGamepad1.dpad_up) {
+            speedPID = (speedPID <= (maxSpeed-speedDelta)) ? (speedPID+speedDelta) : speedPID;
+        } else if (gamepad1.dpad_down && !pastGamepad1.dpad_down) {
+            speedPID = (speedPID >= speedDelta) ? (speedPID-speedDelta) : 0;
         }
+        pastGamepad1.copy(gamepad1);
+    }
+    public void runUsingPID(){
+        updateSpeedPID();
         double targetPower = outtakePID(speedPID);
         if(targetPower > maxOuttakePower){
             targetPower = maxOuttakePower;
@@ -94,7 +97,7 @@ public class PIOuttake {
         }
         outtakeMotor.setPower(targetPower);
         outtakeMotor2.setPower(targetPower);
-        if (currentGamepad1.left_trigger > 0.25) {
+        if (gamepad1.left_trigger > 0.25) {
             outtakeServo0.setPosition(outtakeServo0OpenPosition);
             outtakeServo1.setPosition(outtakeServo1OpenPosition);
         } else {

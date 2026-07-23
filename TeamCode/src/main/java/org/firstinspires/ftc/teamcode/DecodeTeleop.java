@@ -9,6 +9,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.Gamepad;
 import com.pedropathing.paths.PathChain;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
@@ -40,21 +41,30 @@ public class DecodeTeleop extends LinearOpMode {
     PIOuttake outtakeCode;
     DcMotorEx outtakeMotor;
     DcMotor outtakeMotor2;
+    Gamepad pastGamepad1;
     private TelemetryManager manager;
     Limelight3A limelight;
     LimelightRunner runOLime;
-    public int goalTag = 20;
     public double DX = 0;
     public double DIST = 0;
+    public double outtakeMotorVelocity = 0;
     public static double kP_TURN = 0.03;
     public static double tI_TURN = 960;
     public double integralTurn = 0;
     public double MAXTURN = 0.75;
-    public int currentPipeline = 0;
-    public String[] pipelineNames = {"Blue outer goal", "Red outer goal", "Blue inner goal", "Red inner goal", "Localization"};
-    public int[] goalTags = {20, 24, 10, 14, -1};
-    //public Pose aprilTagBlue = new Pose(16, 131, /*degrees*/-45);
-    //public Pose aprilTagRed = new Pose(128, 130, /*degrees*/45);
+
+    public boolean isPipelineSet = false;
+    public String[] pipelineNames = {"CRIWholeField", "CRIRedAlliance", "CRIBlueAlliance", "CRIObeliskTest"};
+    public int pipelineIndex = 0;
+
+    public String[] tagNames = {"Goal", "Prism"};
+    public int[] redTagIDs = {24, 14};
+    public int[] blueTagIDs = {20, 10};
+
+    public boolean isRed = true; // false is blue team
+    public boolean isGoal = true; // false if pointing at prism
+    public boolean isColorSet = false;
+
     private void setTurnInPlace(double turn) {
         if (Math.abs(turn) > MAXTURN){
             turn = MAXTURN * turn/Math.abs(turn);
@@ -70,6 +80,56 @@ public class DecodeTeleop extends LinearOpMode {
             robot.setPose(new Pose(limePose.getX() * convert, limePose.getY() * convert, limePose.getHeading()));
         }
     }
+    private void setPipeline() {
+        if (isPipelineSet || !isColorSet) { return; }
+
+        telemetry.addData("right trigger", gamepad1.right_trigger);
+        telemetry.addLine("Press dpad up/down to cycle pipelines and right trigger to select");
+        telemetry.addData("Number pipelines", pipelineNames.length);
+        telemetry.addData("Current pipeline index", pipelineIndex);
+        telemetry.addData("Current pipeline name", pipelineNames[pipelineIndex]);
+
+        if (gamepad1.dpad_up && !pastGamepad1.dpad_up && (pipelineIndex < (pipelineNames.length-1))) {
+            pipelineIndex++;
+        } else if (gamepad1.dpad_down && !pastGamepad1.dpad_down && (pipelineIndex > 0)){
+            pipelineIndex--;
+        }
+
+        if (gamepad1.right_trigger > 0.25 && pastGamepad1.right_trigger < 0.25) {
+            isPipelineSet = true;
+        }
+    }
+    public void setColor() {
+        if (!isPipelineSet || isColorSet) { return; }
+
+        telemetry.addLine("Press dpad up/down to cycle red/blue and right trigger to select");
+        telemetry.addData("Current color", (isRed) ? "RED" : "BLUE");
+
+        if ((gamepad1.dpad_up && !pastGamepad1.dpad_up) || (gamepad1.dpad_down && !pastGamepad1.dpad_down)) {
+            isRed = !isRed;
+        }
+
+        if (gamepad1.right_trigger > 0.25 && pastGamepad1.right_trigger < 0.25) {
+            isColorSet = true;
+        }
+    }
+    private void checkToggleIsGoal() {
+        if (gamepad1.x && !pastGamepad1.x) {
+            isGoal = !isGoal;
+        }
+    }
+    private int getTargetTagID() {
+        if (isRed) {
+            return (isGoal) ? redTagIDs[0] : redTagIDs[1];
+        }
+        return (isGoal) ? blueTagIDs[0] : blueTagIDs[1];
+    }
+    private String getTargetName() {
+        if (isRed) {
+            return (isGoal) ? "RED GOAL" : "RED PRISM";
+        }
+        return (isGoal) ? "BLUE GOAL" : "BLUE PRISM";
+    }
     private void mainLoop() {
         /*if (gamepad2.left_trigger > 0.25){
             Pose limelightResult = runOLime.getBotPose();
@@ -77,24 +137,28 @@ public class DecodeTeleop extends LinearOpMode {
                 localizePinpoint(limelightResult);
             }
         }*/
-        if (gamepad1.x) {
-            currentPipeline++;
-            if (currentPipeline >= pipelineNames.length){
-                currentPipeline = pipelineNames.length - 1;
-            }else if (currentPipeline < 0){
-                currentPipeline = 0;
-            }
-            runOLime.switchPipeline(currentPipeline);
-        } else if (gamepad1.b){
-            currentPipeline--;
-            if (currentPipeline < 0){
-                currentPipeline = 0;
-            }else if (currentPipeline >= pipelineNames.length){
-                currentPipeline = pipelineNames.length - 1;
-            }
-            runOLime.switchPipeline(currentPipeline);
-        }
-        DX = runOLime.getDX(goalTags[currentPipeline]);
+//        if (gamepad1.x) {
+//            currentPipeline++;
+//            if (currentPipeline >= pipelineNames.length){
+//                currentPipeline = pipelineNames.length - 1;
+//            }else if (currentPipeline < 0){
+//                currentPipeline = 0;
+//            }
+//            runOLime.switchPipeline(currentPipeline);
+//        } else if (gamepad1.b){
+//            currentPipeline--;
+//            if (currentPipeline < 0){
+//                currentPipeline = 0;
+//            }else if (currentPipeline >= pipelineNames.length){
+//                currentPipeline = pipelineNames.length - 1;
+//            }
+//            runOLime.switchPipeline(currentPipeline);
+//        }
+
+        checkToggleIsGoal();
+        telemetry.addData("Target Name", getTargetName());
+        int targetTagID = getTargetTagID();
+        DX = runOLime.getDX(targetTagID);
         if (gamepad1.left_bumper) {
             /*if (!Double.isNaN(DX) && Math.abs(DX) <= 1.0) {
                 setTurnInPlace(0);
@@ -116,7 +180,7 @@ public class DecodeTeleop extends LinearOpMode {
         intakeCode.intake();
         outtakeCode.runUsingPID();
 
-        telemetry.addData("Pipeline for limelight is", pipelineNames[currentPipeline]);
+        telemetry.addData("Pipeline for limelight is", pipelineNames[pipelineIndex]);
         /*telemetry.addData("motor velocity: ", outtakeCode.outtakeMotor.getVelocity());
         manager.addData("MotorVelocity", outtakeMotor.getVelocity());
         manager.addData("Integral", outtakeCode.integral);
@@ -167,11 +231,16 @@ public class DecodeTeleop extends LinearOpMode {
         }else {
             manager.addData("Integral/ti", outtakeCode.integral / PIOuttake.ti);
         }
+        outtakeMotorVelocity = outtakeMotor.getVelocity();
+        telemetry.addData("Outtake Motor Velocity", outtakeMotorVelocity);
         telemetry.update();
         robot.update();
         manager.update();
+        pastGamepad1.copy(gamepad1);
     }
     void initialize() {
+        pastGamepad1 = new Gamepad();
+        pastGamepad1.copy(gamepad1);
         try {
             StringBuilder buildStringer = new StringBuilder();
             buildStringer.append(Environment.getExternalStorageDirectory().getPath());
@@ -181,6 +250,7 @@ public class DecodeTeleop extends LinearOpMode {
             telemetry.addLine(e.getMessage());
             fileReaderWriter = null;
         }
+
         manager = PanelsTelemetry.INSTANCE.getTelemetry();
         driveCode = new decodeDriveCode(gamepad1, hardwareMap);
         intakeCode = new decodeIntake(hardwareMap, gamepad1);
@@ -193,7 +263,12 @@ public class DecodeTeleop extends LinearOpMode {
             intakeCode.movingForward = false;
         }
         while (!opModeIsActive()) {
+            // Get the pipeline (i.e. which field to use), whether we are the red/blue team,
+            // and what goal/prism to point at
+            setPipeline();
+            setColor();
             telemetry.update();
+            pastGamepad1.copy(gamepad1);
         }
         robot = Constants.createFollower(hardwareMap);
         try {
@@ -213,6 +288,8 @@ public class DecodeTeleop extends LinearOpMode {
         //pinpoint.setEncoderResolution(GoBildaPinpointDriver.GoBildaOdometryPods.goBILDA_SWINGARM_POD);
         //pinpoint.resetPosAndIMU();
         //pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
+
+        pastGamepad1.copy(gamepad1);
     }
 
     @Override
