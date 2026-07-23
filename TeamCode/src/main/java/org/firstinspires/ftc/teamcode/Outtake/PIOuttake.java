@@ -31,8 +31,8 @@ public class PIOuttake {
     public static double td = 0;
     public double integral2 = 0;
     public boolean isFar = false;
-    public static double farSpeed = 1650; // for now, real speed is 1425
-    public static double closeSpeed = 1150;
+    public static double farSpeed = 1500; // for now, real speed is 1425
+    public static double closeSpeed = 1100;
     public static double maxSpeed = 2000;
     public double speedPID = closeSpeed;
     public Servo LED;
