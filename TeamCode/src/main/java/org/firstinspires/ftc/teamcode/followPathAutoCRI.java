@@ -44,8 +44,8 @@ public class followPathAutoCRI extends LinearOpMode {
     public boolean isStartSet = false;
     public Pose shootPos;
     public FileReadWriter fileReaderWriter;
-    public static double kP_TURN = 0.03;
-    public static double tI_TURN = 960;
+    public static double kP_TURN = 0.02;
+    public static double tI_TURN = 1440;
     public int integralTurn = 0;
     public Pose[] positionsBlueFar = {
             //to and through 1st artifacts
