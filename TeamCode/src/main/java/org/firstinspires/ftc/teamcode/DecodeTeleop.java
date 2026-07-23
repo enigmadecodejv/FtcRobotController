@@ -48,8 +48,8 @@ public class DecodeTeleop extends LinearOpMode {
     public double DX = 0;
     public double DIST = 0;
     public double outtakeMotorVelocity = 0;
-    public static double kP_TURN = 0.03;
-    public static double tI_TURN = 960;
+    public static double kP_TURN = 0.02;
+    public static double tI_TURN = 1440;
     public double integralTurn = 0;
     public double MAXTURN = 0.75;
 
@@ -81,7 +81,7 @@ public class DecodeTeleop extends LinearOpMode {
         }
     }
     private void setPipeline() {
-        if (isPipelineSet || !isColorSet) { return; }
+        if (isPipelineSet) { return; }
 
         telemetry.addData("right trigger", gamepad1.right_trigger);
         telemetry.addLine("Press dpad up/down to cycle pipelines and right trigger to select");
@@ -98,6 +98,7 @@ public class DecodeTeleop extends LinearOpMode {
         if (gamepad1.right_trigger > 0.25 && pastGamepad1.right_trigger < 0.25) {
             isPipelineSet = true;
         }
+        pastGamepad1.copy(gamepad1);
     }
     public void setColor() {
         if (!isPipelineSet || isColorSet) { return; }
@@ -112,6 +113,7 @@ public class DecodeTeleop extends LinearOpMode {
         if (gamepad1.right_trigger > 0.25 && pastGamepad1.right_trigger < 0.25) {
             isColorSet = true;
         }
+        pastGamepad1.copy(gamepad1);
     }
     private void checkToggleIsGoal() {
         if (gamepad1.x && !pastGamepad1.x) {
@@ -241,6 +243,18 @@ public class DecodeTeleop extends LinearOpMode {
     void initialize() {
         pastGamepad1 = new Gamepad();
         pastGamepad1.copy(gamepad1);
+
+        while (!opModeIsActive() && !isColorSet) {
+            // Get the pipeline (i.e. which field to use), whether we are the red/blue team,
+            // and what goal/prism to point at
+            setPipeline();
+            setColor();
+            telemetry.update();
+            pastGamepad1.copy(gamepad1);
+        }
+        telemetry.clear();
+        telemetry.update();
+
         try {
             StringBuilder buildStringer = new StringBuilder();
             buildStringer.append(Environment.getExternalStorageDirectory().getPath());
@@ -262,14 +276,7 @@ public class DecodeTeleop extends LinearOpMode {
         } else {
             intakeCode.movingForward = false;
         }
-        while (!opModeIsActive()) {
-            // Get the pipeline (i.e. which field to use), whether we are the red/blue team,
-            // and what goal/prism to point at
-            setPipeline();
-            setColor();
-            telemetry.update();
-            pastGamepad1.copy(gamepad1);
-        }
+
         robot = Constants.createFollower(hardwareMap);
         try {
             if (fileReaderWriter != null) {
@@ -289,6 +296,8 @@ public class DecodeTeleop extends LinearOpMode {
         //pinpoint.resetPosAndIMU();
         //pinpoint.setEncoderDirections(GoBildaPinpointDriver.EncoderDirection.FORWARD, GoBildaPinpointDriver.EncoderDirection.REVERSED);
 
+        telemetry.addLine("Initialization complete.");
+        telemetry.update();
         pastGamepad1.copy(gamepad1);
     }
 
